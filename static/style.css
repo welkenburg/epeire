@@ -68,15 +68,10 @@ button {
 
 /* Style pour les menus */
 .menu {
-    display: none;
+    display: block;
     background-color: #f8f9fa;
     padding : 1rem;
     border-radius: 0 0 0.2rem 0.2rem;
-}
-
-/* Afficher le menu sélectionné */
-.active-menu {
-    display:block;
 }
 
 #lancer {
@@ -155,3 +150,11 @@ button {
     cursor: not-allowed;
 }
 
+.strat-menu {
+    display: none;
+}
+
+/* Afficher le menu sélectionné */
+.active-menu {
+    display:flex;
+}

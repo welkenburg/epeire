@@ -15,7 +15,7 @@ var marker = L.marker([48.8566, 2.3522]).addTo(map);
 // Fonction pour changer le menu visible
 function toggleMenu(menuToShow) {
     // Cacher tous les menus
-    $('.menu').removeClass('active-menu');
+    $('.strat-menu').removeClass('active-menu');
     // Afficher le menu sélectionné
     $('#' + menuToShow).addClass('active-menu');
 }
@@ -39,7 +39,7 @@ toggleMenu('basic-menu');
 
 $('#search-form').submit(function(event){
     event.preventDefault();
-    var adresse = $('#adresse').val();
+    var adresse = $('#adresse-generale').val();
 
     // Envoyer la requête au backend Flask pour géocoder l'adresse
     $.post('/chercher', {adresse: adresse}, function(data){
