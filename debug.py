@@ -1,7 +1,10 @@
 import networkx as nx
 import matplotlib.pyplot as plt
-import threading
+from utils import *
 import osmnx
+from osmnx.plot import get_node_colors_by_attr, plot_graph
+import matplotlib as mpl
+import json
 
 # list attributes
 def list_attributs(graph: nx.MultiDiGraph, type : str =None):
@@ -106,54 +109,90 @@ def show_attr_val_on_map(graph: nx.MultiDiGraph, obj: str, attr: str, value):
 
     plt.show()
 
-# other
-def _list_attributs(graph: nx.MultiDiGraph, limit=20):
-    # imports
-    from pprint import pprint
+# Affichage du graphe pondéré en fonction d'un attribut
+def show_weighted_graph(graph: nx.MultiDiGraph, ax: plt.Axes, weight: str, color_map: str = "terrain") -> None:
+    """
+    Affiche un graphe avec des couleurs de nœuds représentant un attribut pondéré donné.
+    
+    graph : Le graphe à afficher.
+    ax : L'axe matplotlib sur lequel dessiner le graphe.
+    weight : L'attribut à afficher (par exemple "speed_max").
+    color_map : Le schéma de couleurs à utiliser pour la visualisation.
+    """
+    node_weights = [graph.nodes[node].get(weight, 0) for node in graph.nodes]  # Récupérer les poids des nœuds pour l'attribut spécifié
 
-    # Créer des dictionnaires pour les attributs uniques des sommets et des arêtes
-    sommet_attributs = {}
-    arete_attributs = {}
+    # Créer une carte de couleurs pour les nœuds selon leur poids
+    node_colors = get_node_colors_by_attr(graph, weight, cmap=color_map)
+
+    # Créer une barre de couleurs (color bar)
+    norm = mpl.colors.Normalize(vmin=min(node_weights), vmax=max(node_weights))  # Normalisation basée sur les poids des nœuds
+    sm = plt.cm.ScalarMappable(cmap=color_map, norm=norm)
+    sm.set_array([])  # Nécessaire pour la barre de couleur
+
+    # Ajouter la barre de couleur à l'axe (ax)
+    cbar = ax.figure.colorbar(sm, ax=ax, orientation='vertical')
+    cbar.set_label(weight)  # L'étiquette de la barre de couleur
+
+    # Tracer le graphe avec les couleurs de nœuds
+    plot_graph(graph, ax=ax, node_color=node_colors, show=False, close=False)
+
+# Affichage de la répartition des valeurs d'un attribut (par exemple la vitesse)
+def show_attribute_repartition(graph: nx.MultiDiGraph, ax: plt.Axes, attribute: str) -> None:
+    """
+    Affiche la répartition de l'attribut spécifié sur l'axe donné (ax).
     
-    # Fonction pour convertir une valeur en un type hashable si nécessaire
-    def make_hashable(value):
-        if isinstance(value, list):
-            return tuple(value)  # Convertir les listes en tuples
-        return value
+    graph : Le graphe contenant les nœuds avec leurs attributs.
+    ax : L'axe matplotlib sur lequel afficher la répartition.
+    attribute : L'attribut dont on veut afficher la répartition (par exemple "speed_max").
+    """
+    values = sorted([graph.nodes[node][attribute] for node in graph])  # Trie les valeurs de l'attribut pour chaque nœud
+    xrange = [i * 100 / len(values) for i in range(len(values))]  # Pourcentage cumulatif des nœuds
+    ax.plot(xrange, values, "+")  # Tracer la répartition
+    ax.set_title(f"Répartition de l'attribut {attribute}")
+    ax.set_xlabel("Pourcentage des nœuds")
+    ax.set_ylabel(f"Valeur de {attribute}")
+
+def highlight_nodes(graph: nx.MultiDiGraph, ax: plt.Axes, nodes: list) -> None:
+    """
+    Met en évidence les nœuds stratégiques sur la carte tout en atténuant les autres éléments.
+    """
+    # Créer une liste de couleurs pour les nœuds (rouge pour les stratégiques, bleu clair transparent pour les autres)
+    node_colors = ["red" if node in nodes else "lightblue" for node in graph.nodes]
+    node_size = [30 if node in nodes else 1 for node in graph.nodes] # Taille
     
-    # Récupérer les attributs des sommets
-    for sommet, data in graph.nodes(data=True):
-        for key, value in data.items():
-            value = make_hashable(value)  # Convertir la valeur si nécessaire
-            if key not in sommet_attributs:
-                sommet_attributs[key] = set()  # Initialiser un set pour cet attribut
-            sommet_attributs[key].add(value)  # Ajouter la valeur (sans doublons)
+    # Tracer le graphe avec des propriétés ajustées
+    plot_graph(
+        graph,
+        ax=ax,
+        node_color=node_colors,
+        node_size=node_size,
+        show=False,
+        close=False,
+    )
+
+def generate_geojson(points:list[tuple[float,float]], output_file: str="points.geojson" ) -> None:
+    """
+    Génère un fichier GeoJSON à partir d'une liste de points.
     
-    # Récupérer les attributs des arêtes
-    for u, v, key, data in graph.edges(data=True, keys=True):
-        for key, value in data.items():
-            value = make_hashable(value)  # Convertir la valeur si nécessaire
-            if key not in arete_attributs:
-                arete_attributs[key] = set()  # Initialiser un set pour cet attribut
-            arete_attributs[key].add(value)  # Ajouter la valeur (sans doublons)
+    :param points: Liste de tuples (x, y) représentant longitude et latitude.
+    :param output_file: Nom du fichier GeoJSON à générer.
+    """
+    geojson = {
+        "type": "FeatureCollection",
+        "features": []
+    }
     
-    # Limiter les valeurs à 5 premières (si nécessaire)
-    def limit_values(attribute_dict):
-        for key, values in attribute_dict.items():
-            attribute_dict[key] = list(values)[:limit]  # Prendre les 5 premières valeurs (si disponibles)
+    for point in points:
+        feature = {
+            "type": "Feature",
+            "geometry": {
+                "type": "Point",
+                "coordinates": [point[0], point[1]]  # Longitude, Latitude
+            },
+            "properties": {}  # Ajouter des propriétés si nécessaire
+        }
+        geojson["features"].append(feature)
     
-    # Limiter les valeurs dans les dictionnaires d'attributs
-    limit_values(sommet_attributs)
-    limit_values(arete_attributs)
-    
-    # Afficher les résultats
-    print("Attributs des sommets :")
-    pprint(sommet_attributs)
-    print("Attributs des arêtes :")
-    pprint(arete_attributs)
-    
-    # Afficher les résultats
-    print("Attributs des sommets :")
-    pprint(sommet_attributs)
-    print("Attributs des arêtes :")
-    pprint(arete_attributs)
+    # Écriture dans un fichier GeoJSON
+    with open(output_file, "w", encoding="utf-8") as f:
+        json.dump(geojson, f, ensure_ascii=False, indent=4)

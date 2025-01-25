@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carte Interactive</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+    <div id="map"></div>
+
+    <form id="search-form">
+        <input type="text" id="adresse-generale" class="search-addr" placeholder="Entrez une adresse">
+        <button type="submit">Chercher</button>
+    </form>
+
+    <div id="panel_control">
+        <div id="button-container">
+            <button id="basic-btn" class="menu-button" disabled>Basic</button>
+            <button id="advanced-btn" class="menu-button">Advanced</button>
+        </div>
+
+        <!-- Menus -->
+        <form id="basic-menu" class="menu active-menu">
+            <h2 class="form-title">Informations</h2>
+            
+            <div class="form-group">
+                <label for="adresse" class="form-label">Adresse* :</label>
+                <input type="text" id="adresse" class="form-input" name="adresse" placeholder="Entrez l'adresse" required>
+            </div>
+    
+            <div class="form-group">
+                <label for="temps_fuite" class="form-label">Temps de fuite (hh:mm)* :</label>
+                <input type="time" id="temps_fuite" class="form-input" name="temps_fuite" required>
+            </div>
+    
+            <div class="form-group">
+                <label for="direction_fuite" class="form-label">Direction de fuite :</label>
+                <div class="form-input"><button type="button" id="basic_btn" class="form-button">Choisir</button></div>
+            </div>
+
+            <h2 class="form-title">Stratégie</h2>
+            
+            <div class="form-group">
+                {{ strategie_basic | safe }}
+            </div>
+
+            <div class="form-group">
+                <label for="direction_fuite" class="form-label">nombre de points* :</label>
+                <input type="number" id="pts_num" class="form-input" name="pts_num" placeholder="6" required>
+            </div>
+
+            <h2 class="form-title">Style</h2>
+
+            <div class="form-group">
+                <label for="direction_fuite" class="form-label">couleur des points :</label>
+                <input type="color" id="dot_color" class="form-input" name="dot_color" value="#FF0000" required>
+            </div>
+            <p>* : champs obligatoires</p>
+        </form>
+        <div id="advanced-menu" class="menu">
+            {{ strategie_advanced | safe }}
+        </div>
+
+        <div id="lancer">
+            <button id="go-btn" class="menu-button">GO</button>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="static/script.js"></script>
+</body>
+</html>

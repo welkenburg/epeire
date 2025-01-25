@@ -1,0 +1,11 @@
+{
+    "force": {
+        "weights" : {
+            "distance_depart": -0.8,  
+            "speed_avg": 0.2,   
+            "street_count": 0.1,
+            "speed_max" : 0.4   
+        },
+        "points_repeltion" : 0.6
+    }
+}
