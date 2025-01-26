@@ -90,17 +90,17 @@ class Epervier:
         ox.save_graphml(self.graph, filepath=self.map_path)
         ecrire_liste_dans_fichier(self.nodes_attr, self.attr_path)
 
-
-e = Epervier("auch",4*60)
-# e.add_graph_infos()
-# e.exclude_isochrone()
-# e.save()
-strat = {"weights" : {
-            "distance_depart": -0.8,  
-            "speed_avg": 0.2,   
-            "street_count": 0.1,
-            "speed_max" : 0.4   
-        },
-        "points_repeltion" : 0.6}
-points = e.select_points(strat, 6)
-print(points, e.nodes_attr)
+if __name__ == "__main__":
+    e = Epervier("auch",4*60)
+    # e.add_graph_infos()
+    # e.exclude_isochrone()
+    # e.save()
+    strat = {"weights" : {
+                "distance_depart": -0.8,  
+                "speed_avg": 0.2,   
+                "street_count": 0.1,
+                "speed_max" : 0.4   
+            },
+            "points_repeltion" : 0.6}
+    points = e.select_points(strat, 6)
+    print(points, e.nodes_attr)

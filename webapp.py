@@ -1,10 +1,11 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session
 from geopy.geocoders import Nominatim
 from web_utils import *
-from main import *
+from epervier import *
 from typing import Dict, Union
 
 app = Flask(__name__)  # Création de l'application Flask
+app.secret_key = "aac0b348bd5700295eccf2127c7afeb50a6eb52843a24e4f27cfd22af6f8e5f2"
 modes_file = 'data/modes.json'  # Chemin vers le fichier JSON contenant les modes de stratégies
 
 # Route principale pour afficher la page d'accueil
@@ -53,7 +54,17 @@ def submit_form() -> str:  # La fonction retourne une chaîne de caractères (JS
     total_secondes = heures * 3600 + minutes * 60
     strat = modes[strategie]
     
-    points = get_points(adresse, direction_fuite, total_secondes, strat, num)
+    # Vérifier si c'est la première requête
+    if 'premiere_requete' not in session:
+        session['premiere_requete'] = True
+        e = Epervier(adresse,total_secondes)
+        e.add_graph_infos()
+        e.exclude_isochrone()
+        e.save()
+        
+    # Traitement pour les requêtes suivantes
+    e = Epervier(adresse,total_secondes)
+    points = e.select_points(strat, 6)
     return points
 
 # Point d'entrée principal de l'application Flask
