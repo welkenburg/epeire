@@ -139,12 +139,12 @@ def normalize_attribute(graph: nx.MultiDiGraph, attribute: str) -> None:
     graph : Le graphe contenant les nœuds avec leurs attributs.
     attribute : L'attribut à normaliser (par exemple "speed_avg").
     """
-    values = [graph.nodes[node].get(attribute, 0) for node in graph.nodes]
+    values = [float(graph.nodes[node].get(attribute, 0)) for node in graph.nodes]
     min_value = min(values)
     max_value = max(values)
     
     for node in graph.nodes:
-        value = graph.nodes[node].get(attribute, 0)
+        value = float(graph.nodes[node].get(attribute, 0))
         # Normalisation Min-Max
         if max_value - min_value != 0:
             normalized_value = (value - min_value) / (max_value - min_value)
@@ -189,3 +189,15 @@ def get_top_node(graph: nx.MultiDiGraph, blacklist : list) -> list:
         del node_scores[node]
     return max(node_scores, key=node_scores.get)
 
+def ecrire_liste_dans_fichier(liste, nom_fichier):
+    with open(nom_fichier, 'w') as f:
+        for item in liste:
+            f.write(f"{item}\n")
+
+def lire_liste_du_fichier(nom_fichier):
+    with open(nom_fichier, 'r') as f:
+        return [line.strip() for line in f.readlines()]
+
+# TODO
+def add_node_alignment(graph : nx.MultiDiGraph, dir : float):
+    pass

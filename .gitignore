@@ -170,6 +170,9 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
+# custom stuff
 __pycache__
 cache
 local
+data/*.graphml
+data/*.attr
