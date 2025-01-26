@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carte Interactive</title>
+    <title>E-pervier</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="static/style.css">
 </head>
@@ -37,7 +37,17 @@
     
             <div class="form-group">
                 <label for="direction_fuite" class="form-label">Direction de fuite :</label>
-                <div class="form-input"><button type="button" id="basic_btn" class="form-button">Choisir</button></div>
+                <select name="direction_fuite" id="direction_fuite" class="form-input">
+                    <option value="None" disabled selected>Sélectionnez une direction de fuite</option>
+                    <option value="N">Nord</option>
+                    <option value="NE">Nord-Est</option>
+                    <option value="NO">Nord-Ouest</option>
+                    <option value="SE">Sud-Est</option>
+                    <option value="SO">Sud-Ouest</option>
+                    <option value="S">Sud</option>
+                    <option value="E">Est</option>
+                    <option value="O">Ouest</option>
+                </select>
             </div>
 
             <h2 class="form-title">Stratégie</h2>

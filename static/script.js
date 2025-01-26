@@ -9,8 +9,8 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors'
 }).addTo(map);
 
-// Marqueur initial sur Paris
-var marker = L.marker([48.8566, 2.3522]).addTo(map);
+// Tableau pour stocker les marqueurs
+var markers = [];
 
 // Fonction pour changer le menu visible
 function toggleMenu(menuToShow) {
@@ -46,7 +46,6 @@ $('#search-form').submit(function(event){
         if (data.lat && data.lon) {
             // Recentrer la carte et déplacer le marqueur
             map.setView([data.lat, data.lon], 12);
-            marker.setLatLng([data.lat, data.lon]);
         } else {
             alert(data.error);
         }
@@ -76,17 +75,30 @@ $('#go-btn').click(function(event) {
     $('#go-btn').addClass('waiting'); // Ajouter la classe 'waiting' pour changer le style
     $('#go-btn').text('En attente...');
 
+    // Envoyer la requête au backend Flask pour géocoder l'adresse
+    $.post('/chercher', {adresse: adresse}, function(data){
+        if (data.lat && data.lon) {
+            // Recentrer la carte et déplacer le marqueur
+            map.setView([data.lat, data.lon], 12);
+            marker = L.marker([data.lat, data.lon]).addTo(map);
+            markers.push(marker);
+        } else {
+            alert(data.error);
+        }
+    });
+
     // Envoyer la requête POST au serveur Flask
     $.post('/submit', formData, function(response) {
         // Traiter la réponse du serveur
         markerColor = $('#dot_color').val()
         for (let i = 0; i < response.length; i++) {
-            L.circleMarker(response[i], {
+            marker = L.circleMarker(response[i], {
                 color: markerColor, // Couleur de la bordure
                 fillColor: markerColor, // Couleur de remplissage
                 fillOpacity: 0.6, // Opacité du remplissage
                 radius: 5 // Taille du cercle
             }).addTo(map);
+            markers.push(marker);
         }
         
         // Réinitialiser le bouton à son style initial une fois la réponse reçue
@@ -98,4 +110,15 @@ $('#go-btn').click(function(event) {
         $('#go-btn').text('GO');
         alert("Erreur lors de l'envoi de la requête.");
     });
+});
+
+
+// Fonction pour réinitialiser la carte
+$('#rst-btn').click(function(event) {
+    event.preventDefault();
+    // Supprimer tous les marqueurs de la carte
+    markers.forEach(function(marker) {
+        map.removeLayer(marker);
+    });
+    markers = []; // Réinitialise le tableau de marqueurs
 });
