@@ -5,7 +5,7 @@ from epervier import *
 from typing import Dict, Union
 
 app = Flask(__name__)  # Création de l'application Flask
-app.secret_key = "aac0b348bd5700295eccf2127c7afeb50a6eb52843a24e4f27cfd22af6f8e5f2"
+app.secret_key = open("data/secret", "r").read()
 modes_file = 'data/modes.json'  # Chemin vers le fichier JSON contenant les modes de stratégies
 
 # Route principale pour afficher la page d'accueil
@@ -64,7 +64,7 @@ def submit_form() -> str:  # La fonction retourne une chaîne de caractères (JS
         
     # Traitement pour les requêtes suivantes
     e = Epervier(adresse,total_secondes)
-    points = e.select_points(strat, 6)
+    points = e.select_points(strat, num)
     return points
 
 # Point d'entrée principal de l'application Flask
