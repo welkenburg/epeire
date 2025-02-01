@@ -16,7 +16,8 @@ def index() -> str:  # La fonction renvoie une chaîne de caractères (HTML)
     """
     modes = load_data(modes_file)
     basic = load_menu(modes)
-    advanced = "menu avancé"
+    attrs = lire_liste_du_fichier("data/attributes")
+    advanced = load_advanced_menu(attrs)
     return render_template('index.html', strategie_basic=basic, strategie_advanced=advanced)
 
 # Route pour la recherche d'une adresse et conversion en coordonnées géographiques

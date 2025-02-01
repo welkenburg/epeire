@@ -62,7 +62,7 @@ button {
     cursor: pointer;
     border: none;
     color: #007bff;
-    background-color: white;
+    background-color: #f8f9faaa;
     width : 8rem;
 }
 
@@ -158,4 +158,17 @@ button {
 /* Afficher le menu sélectionné */
 .active-menu {
     display:flex;
+}
+
+#advanced-menu {
+    flex-direction: column;
+}
+
+#global-strat-control {
+    display: flex;
+}
+
+.strat-ctrl {
+    flex-grow: 1;
+    margin : 0 4px 0 4px;
 }

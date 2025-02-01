@@ -1,7 +1,7 @@
 {
     "force": {
         "weights" : {
-            "distance_depart": -0.8,  
+            "distance_depart": -10,  
             "speed_avg": 0.2,   
             "street_count": 0.1,
             "speed_max" : 0.4   

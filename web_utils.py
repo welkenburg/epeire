@@ -22,3 +22,13 @@ def load_menu(modes):
         prompt += l
     prompt += "</select>"
     return prompt
+
+def load_advanced_menu(attrs):
+    lis = [f'<div class="attr-slide"><input type="checkbox"><label>{attr}</label><input type="range"><label>0</label></div>' for attr in attrs]
+    prompt = """
+        <div style="display : flex; flex-direction : column">
+    """
+    for l in lis:
+        prompt += l
+    prompt += "</div>"
+    return prompt

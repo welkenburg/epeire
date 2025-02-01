@@ -58,12 +58,14 @@
 
             <div class="form-group strat-menu"  id="advanced-menu">
                 {{ strategie_advanced | safe }}
-                <label>nom de la stratégie</label>
-                <input type="text" id="strat-nom" class="form-input" name="strat-nom" placeholder="Entrez le nom de stratégie">
-                <div>
-                    <button>load</button>
-                    <button>save</button>
-                    <button>reset</button>
+                <div class="form-group">
+                    <label class="form-label">nom de la stratégie : </label>
+                    <input type="text" id="strat-nom" class="form-input" name="strat-nom" placeholder="Entrez le nom de stratégie">
+                </div>
+                <div id="global-strat-control">
+                    <button class="strat-ctrl">load</button>
+                    <button class="strat-ctrl">save</button>
+                    <button class="strat-ctrl">reset</button>
                 </div>
             </div>
 

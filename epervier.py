@@ -8,7 +8,6 @@ from utils import *  # Importation des fonctions personnalisées définies dans 
 from debug import *
 
 data_fold : str = "data/"
-default_nodes_attr : list = ["street_count"]
 
 class Epervier:
     def __init__(self, starting_point : str, time_limit : float):
@@ -17,23 +16,19 @@ class Epervier:
         self.speed_lim : float = 180 # km/h
         self.map_radius : float = kmh_to_ms(self.speed_lim) * time_limit * self.map_coef
         self.starting_coords : tuple = ox.geocode(starting_point)
-        self.graph , self.nodes_attr = self.get_graph_and_attr(self.starting_coords, self.map_radius)
+        self.graph : nx.MultiDiGraph = self.get_graph(self.starting_coords, self.map_radius)
 
-    def get_graph_and_attr(self, coords, radius) -> tuple[nx.MultiDiGraph, list]:
+    def get_graph(self, coords, radius) -> tuple[nx.MultiDiGraph, list]:
         self.fileName : str = f"{coords[0]}-{coords[1]}-{radius}".replace(".",",")
         self.map_path : str = os.path.join(data_fold, f"{self.fileName}.graphml")
-        self.attr_path : str = os.path.join(data_fold, f"{self.fileName}.attr")
 
         if not os.path.exists(self.map_path):
             graph : nx.MultiDiGraph = ox.graph_from_address(f"{coords[0]},{coords[1]}", dist=radius, network_type="all")
-            attr : list = default_nodes_attr
             ox.save_graphml(graph, filepath=self.map_path)
-            ecrire_liste_dans_fichier(attr, self.attr_path)
         else:
             graph : nx.MultiDiGraph = ox.load_graphml(self.map_path)
-            attr : list = lire_liste_du_fichier(self.attr_path)
         
-        return graph, attr
+        return graph
     
     def add_graph_infos(self, f_dir : str | float = None):
         def translate_dir(direction :str) -> float:
@@ -50,11 +45,7 @@ class Epervier:
 
         # possible optimisation (faire les deux en meme temps)
         add_node_speed(self.graph)
-        self.nodes_attr.append("speed_avg")
-        self.nodes_attr.append("speed_max")
-        self.nodes_attr.append("speed_min")
         add_node_distance(self.graph, self.starting_coords, "distance_depart")
-        self.nodes_attr.append("distance_depart")
 
     def exclude_isochrone(self):
         starting_node : int = get_point_in_graph(self.starting_coords, self.graph)
@@ -70,7 +61,6 @@ class Epervier:
         for attr in strategie["weights"]:
             normalize_attribute(self.graph, attr)
             new_weights[f"normalized_{attr}"] = strategie["weights"][attr]
-            self.nodes_attr.append(f"normalized_{attr}")
 
         # algorithme glouton (solution suboptimale)
         top_nodes = []
@@ -88,7 +78,6 @@ class Epervier:
 
     def save(self):
         ox.save_graphml(self.graph, filepath=self.map_path)
-        ecrire_liste_dans_fichier(self.nodes_attr, self.attr_path)
 
 if __name__ == "__main__":
     e = Epervier("auch",4*60)
@@ -103,4 +92,4 @@ if __name__ == "__main__":
             },
             "points_repeltion" : 0.6}
     points = e.select_points(strat, 6)
-    print(points, e.nodes_attr)
+    print(points)

@@ -189,11 +189,6 @@ def get_top_node(graph: nx.MultiDiGraph, blacklist : list) -> list:
         del node_scores[node]
     return max(node_scores, key=node_scores.get)
 
-def ecrire_liste_dans_fichier(liste, nom_fichier):
-    with open(nom_fichier, 'w') as f:
-        for item in liste:
-            f.write(f"{item}\n")
-
 def lire_liste_du_fichier(nom_fichier):
     with open(nom_fichier, 'r') as f:
         return [line.strip() for line in f.readlines()]
