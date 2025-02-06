@@ -1,1 +1,0 @@
-{0: {'osmid': 94755194, 'lanes': '2', 'ref': 'N 21', 'name': "Avenue d'Étigny", 'highway': 'primary', 'maxspeed': '50', 'oneway': False, 'reversed': True, 'length': 25.95, 'speed_kph': 50.0, 'travel_time': 1.9}}
