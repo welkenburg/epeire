@@ -10,6 +10,7 @@ import json
 from utils.utils import (
     get_isochrone,
     get_top_node,
+    create_graph_from_osm_data
 )
 
 DATA_FOLDER: str = "data/"
@@ -36,7 +37,7 @@ class Epervier:
             raise RuntimeError(f"Erreur lors du chargement du graphe: {e}")
         
         
-    def get_graph(self, time, delta_time : float = 20*60, fichier_osm: str = f"{DATA_FOLDER}midi-pyrenees-latest.osm.pbf") -> nx.MultiDiGraph:
+    def get_graph(self, time, delta_time : float = 20*60) -> nx.MultiDiGraph:
         """
         Charge le graphe depuis un fichier osm.pbf à partir de deux isochrones
         """
@@ -58,9 +59,12 @@ class Epervier:
             roads = cursor.fetchall()
             conn.close()
 
-            return roads  # Retourne les routes dans A \ B
+            # Utilisation de la fonction auxiliaire pour créer le graphe
+            G = create_graph_from_osm_data(roads)
+
+            return G
         except Exception as e:
-            raise RuntimeError(f"Erreur lors du chargement du graphe depuis {fichier_osm}: {e}")
+            raise RuntimeError(f"Erreur lors du chargement du graphe depuis la base de donnees: {e}")
 
 
     def __add_graph_infos(self, strategie : dict[str, float]):

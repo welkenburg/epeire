@@ -7,6 +7,7 @@ from .utils import (
     angle_diff,
     lire_liste_du_fichier,
     get_isochrone,
+    create_graph_from_osm_data,
     normalize_attribute,
     get_top_node
 )
@@ -18,6 +19,7 @@ __all__ = [
     "angle_diff",
     "lire_liste_du_fichier",
     "get_isochrone",
+    "create_graph_from_osm_data",
     "normalize_attribute",
     "get_top_node"
 ]

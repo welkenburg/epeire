@@ -52,7 +52,7 @@ def get_isochrone(center_coords : tuple[float, float], time_lim) -> Polygon:
         lat, lon = center_coords
         url: str = f'http://localhost:8989/isochrone?point={lat},{lon}&time_limit={time_lim}&profile=car'
         try:
-            response = requests.get(url, timeout=10)
+            response = requests.get(url)
             response.raise_for_status()
             isochrone : dict = response.json()
             polygon_feature = isochrone.get('polygons', [None])[0]
@@ -68,7 +68,8 @@ def get_isochrone(center_coords : tuple[float, float], time_lim) -> Polygon:
         except Exception as e:
             raise RuntimeError(f"Erreur dans get_isochrone: {e}")
 
-
+def create_graph_from_osm_data():
+    pass
 
 # TODO
 def normalize_attribute(graph: nx.MultiDiGraph, attribute: str) -> None:
