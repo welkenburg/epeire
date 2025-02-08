@@ -90,16 +90,23 @@ $('#go-btn').click(function(event) {
     // Envoyer la requête POST au serveur Flask
     $.post('/submit', formData, function(response) {
         // Traiter la réponse du serveur
-        markerColor = $('#dot_color').val()
-        for (let i = 0; i < response.length; i++) {
-            marker = L.circleMarker(response[i], {
-                color: markerColor, // Couleur de la bordure
-                fillColor: markerColor, // Couleur de remplissage
-                fillOpacity: 0.6, // Opacité du remplissage
-                radius: 5 // Taille du cercle
-            }).addTo(map);
-            markers.push(marker);
+        if (response.points) {
+            points = response.points
+            markerColor = $('#dot_color').val()
+            for (let i = 0; i < points.length; i++) {
+                marker = L.circleMarker(points[i], {
+                    color: markerColor, // Couleur de la bordure
+                    fillColor: markerColor, // Couleur de remplissage
+                    fillOpacity: 0.6, // Opacité du remplissage
+                    radius: 5 // Taille du cercle
+                }).addTo(map);
+                markers.push(marker);
+            }
         }
+        else {
+            console.log(response.error);
+        }
+
         
         // Réinitialiser le bouton à son style initial une fois la réponse reçue
         $('#go-btn').removeClass('waiting'); // Retirer la classe 'waiting' pour restaurer l'apparence initiale

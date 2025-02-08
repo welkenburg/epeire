@@ -6,7 +6,7 @@ from utils.utils import lire_liste_du_fichier
 from core.epervier import Epervier
 from typing import Dict, Union
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="../templates", static_folder="../static")
 
 # Chargement de la clé secrète
 try:
@@ -72,7 +72,7 @@ def submit_form() -> Union[str, Dict]:
         points = e.select_points(strat, num)
         return jsonify({'points': points})
     except Exception as e:
-        return jsonify({'error': f"Erreur lors du traitement du formulaire: {e}"}), 500
+        return jsonify({'error': f"Erreur lors du traitement du formulaire: {e}"})
 
 if __name__ == '__main__':
     app.run(debug=True)
