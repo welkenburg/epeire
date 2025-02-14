@@ -189,7 +189,7 @@ class Epervier:
             def process_node(node):
                 """Calcule le score d'un nœud selon la stratégie."""
                 score = 0.0
-                for key, weight in strategie.items():
+                for key, weight in strategie["weights"].items():
                     if key in self.graph.nodes[node]:
                         score += weight * self.graph.nodes[node][key]
                     else:
@@ -223,7 +223,7 @@ class Epervier:
             top_nodes: List[Any] = []
             self.__calculate_node_score(strategie)
             top_nodes = sorted(self.graph.nodes(data=True), key=lambda x: x[1]["score"], reverse=True)[:n_points]
-            raise RuntimeError((self.graph.size(), self.graph.nodes(data=True)))
+
             # for point in range(n_points - 1):
             #     top_node = get_top_node(self.graph, top_nodes)
             #     top_nodes.append(top_node)

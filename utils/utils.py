@@ -102,13 +102,13 @@ def create_graph_from_osm_data(roads):
         # TODO FIX : changer le syteme de coordonnées dans la DB et pas a chaque run du code
         # Transformer pour passer de EPSG:3857 (métrique) à EPSG:4326 (lat/lon)
         transformer = Transformer.from_crs("EPSG:3857", "EPSG:4326", always_xy=True)
-
-        if "pos" in self.graph.nodes[node]:
-            x, y = self.graph.nodes[node]["pos"]
+        new_coords = []
+        for pos in coords:
+            x, y = pos
             lon, lat = transformer.transform(x, y)  # Conversion en lat/lon
-            node_location = (lat, lon)
-        else:
-            raise ValueError(f"Le nœud {node} ne contient pas de coordonnées 'pos' : {self.graph.nodes[node]}")
+            new_coords.append((lat, lon))
+        coords = new_coords
+
 
         if len(coords) < 2:
             continue  # Éviter les géométries trop courtes
