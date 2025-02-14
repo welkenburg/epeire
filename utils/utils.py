@@ -3,7 +3,11 @@ import networkx as nx
 from math import atan2, degrees
 from typing import Any
 import requests
-from shapely.geometry import shape, Polygon
+from shapely.geometry import shape, Polygon, LineString
+from shapely.wkt import loads
+from functools import wraps
+from time import time
+from flask import jsonify
 
 def kmh_to_ms(speed_kmh: float) -> float:
     """Convertit la vitesse de km/h en m/s."""
@@ -34,6 +38,14 @@ def angle_diff(angleA: float, angleB: float) -> float:
         return first_diff if first_diff < 180 else 360 - first_diff
     except Exception as e:
         raise RuntimeError(f"Erreur dans angle_diff: {e}")
+
+def get_angle_fuite(direction : str | int) -> float:
+    db = {"None" : None, "E" : 0, "NE" : 45, "N" : 90, "NO" : 135, "O" : 180, "SO" : 225, "S" : 270, "SE" : 315}
+    if isinstance(direction, str):
+        return float(db[direction])
+    if isinstance(direction, int):
+        return float(direction)
+    raise RuntimeError(f"Il y a une erreur dans get_direction_fuite pour la direction suivante : {direction}")
 
 def lire_liste_du_fichier(nom_fichier: str) -> list:
     """
@@ -68,8 +80,60 @@ def get_isochrone(center_coords : tuple[float, float], time_lim) -> Polygon:
         except Exception as e:
             raise RuntimeError(f"Erreur dans get_isochrone: {e}")
 
-def create_graph_from_osm_data():
-    pass
+def create_graph_from_osm_data(roads):
+    """
+    Crée un MultiDiGraph à partir des données osm récupérées avec osm_id et la géométrie de chaque route.
+
+    Args:
+        roads (list of tuple): Liste de tuples contenant le WKT de la route et son osm_id.
+
+    Returns:
+        nx.MultiDiGraph: Le graphe construit avec les sommets et arêtes.
+    """
+    G = nx.MultiDiGraph()
+
+    for way_wkt, osm_id in roads:
+        way: LineString = loads(way_wkt)  # Convertir WKT en objet LineString
+
+        coords = list(way.coords)  # Liste des points (lon, lat)
+        raise RuntimeError(coords)
+        if len(coords) < 2:
+            continue  # Éviter les géométries trop courtes
+
+        for i in range(len(coords) - 1):
+            u = coords[i]
+            v = coords[i + 1]
+            length = way.length  # Longueur de la ligne
+
+            # Ajouter les sommets
+            G.add_node(u, pos=u)
+            G.add_node(v, pos=v)
+
+            # Ajouter l'arête avec des attributs (osm_id, longueur, etc.)
+            G.add_edge(u, v, key=osm_id, length=length, geometry=way)
+
+    return G
+
+def measure_time(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        start_time = time()
+        response = f(*args, **kwargs)
+        dt = time() - start_time
+
+        # Si la réponse est un objet Flask (jsonify), ajoute dt
+        if isinstance(response, tuple):  # Si la fonction retourne (json, status)
+            response_dict, status_code = response
+            response_dict['dt'] = dt
+            return jsonify(response_dict), status_code
+
+        elif isinstance(response, dict):  # Si la fonction retourne directement un dict
+            response['dt'] = dt
+            return jsonify(response)
+
+        return response  # Cas où ce n'est pas un JSON
+    return wrapper
+
 
 # TODO
 def normalize_attribute(graph: nx.MultiDiGraph, attribute: str) -> None:
@@ -105,4 +169,6 @@ def get_top_node(graph: nx.MultiDiGraph, blacklist: list) -> Any:
         return max(node_scores, key=node_scores.get)
     except Exception as e:
         raise RuntimeError(f"Erreur dans get_top_node: {e}")
+    
+
 

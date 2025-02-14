@@ -1,10 +1,10 @@
 {
     "force": {
         "weights" : {
-            "distance_depart": -10,  
-            "speed_avg": 0.2,   
-            "street_count": 0.1,
-            "speed_max" : 0.4   
+            "nombre_routes_adjacentes": 0.3,
+            "vitesse_max": 0.2,
+            "distance_point_depart": -0.4,
+            "ecart_direction_fuite": 0.1
         },
         "points_repeltion" : 0.6
     }

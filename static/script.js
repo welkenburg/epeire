@@ -58,7 +58,7 @@ $('#go-btn').click(function(event) {
     // Récupérer les valeurs des champs du formulaire
     var adresse = $('#adresse').val();
     var temps_fuite = $('#temps_fuite').val();
-    var direction_fuite = $('#basic_btn').text(); // Ou récupérer une valeur spécifique selon le contenu de ce bouton
+    var direction_fuite = $('#direction_fuite').val(); // Ou récupérer une valeur spécifique selon le contenu de ce bouton
     var strategie = $('#strategie').val();
     var pts_num = $('#pts_num').val();
     
@@ -89,7 +89,18 @@ $('#go-btn').click(function(event) {
 
     // Envoyer la requête POST au serveur Flask
     $.post('/submit', formData, function(response) {
+
         // Traiter la réponse du serveur
+        console.log(`temps de chargement : ${response.dt}s`)
+        L.geoJSON(response.isoA, {
+            style: { color: "blue", weight: 2, opacity: 0.7 },
+        }).addTo(map);
+
+        L.geoJSON(response.isoB, {
+            style: { color: "red", weight: 2, opacity: 0.7 },
+        }).addTo(map);
+        
+        console.log(response);
         if (response.points) {
             points = response.points
             markerColor = $('#dot_color').val()
@@ -103,7 +114,7 @@ $('#go-btn').click(function(event) {
                 markers.push(marker);
             }
         }
-        else {
+        if (response.error) {
             console.log(response.error);
         }
 

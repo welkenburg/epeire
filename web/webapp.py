@@ -2,9 +2,11 @@
 from flask import Flask, render_template, request, jsonify
 from geopy.geocoders import Nominatim
 from web.web_utils import load_data, load_menu, load_advanced_menu
-from utils.utils import lire_liste_du_fichier
+from utils.utils import lire_liste_du_fichier, measure_time
 from core.epervier import Epervier
 from typing import Dict, Union
+
+
 
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
 
@@ -32,6 +34,7 @@ def index() -> str:
         return f"Erreur lors du chargement de la page d'accueil: {e}"
 
 @app.route('/chercher', methods=['POST'])
+@measure_time
 def chercher() -> Dict[str, Union[float, str]]:
     """
     Recherche une adresse et retourne ses coordonnées géographiques.
@@ -49,6 +52,7 @@ def chercher() -> Dict[str, Union[float, str]]:
         return jsonify({'error': f"Erreur lors de la recherche d'adresse: {e}"}), 500
 
 @app.route('/submit', methods=['POST'])
+@measure_time
 def submit_form() -> Union[str, Dict]:
     """
     Traite le formulaire soumis, calcule des points et retourne le résultat en JSON.
@@ -60,19 +64,21 @@ def submit_form() -> Union[str, Dict]:
         strategie = request.form.get('strategie')
         num = int(request.form.get("num", "0"))
         modes = load_data(modes_file)
-        
+
         # Conversion du temps de fuite
         heures, minutes = map(int, temps_fuite.split(':'))
         total_secondes = heures * 3600 + minutes * 60
         strat = modes.get(strategie)
         if strat is None:
-            return jsonify({'error': 'Stratégie invalide'}), 400
+            return {'error': 'Stratégie invalide'}, 400
 
-        e = Epervier(adresse, total_secondes)
-        points = e.select_points(strat, num)
-        return jsonify({'points': points})
+        epervier = Epervier(adresse, direction_fuite)
+        isoA, isoB = epervier.get_graph_from_isochrones(total_secondes)
+        points = epervier.select_points(strat, num)
+        
+        return {'isoA' : isoA, 'isoB' : isoB, "points" : points}
     except Exception as e:
-        return jsonify({'error': f"Erreur lors du traitement du formulaire: {e}"})
+        return {'error': f"Erreur lors du traitement du formulaire: {e}"}
 
 if __name__ == '__main__':
     app.run(debug=True)
