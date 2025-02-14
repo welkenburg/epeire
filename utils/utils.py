@@ -9,6 +9,8 @@ from functools import wraps
 from time import time
 from flask import jsonify
 
+from pyproj import Transformer
+
 def kmh_to_ms(speed_kmh: float) -> float:
     """Convertit la vitesse de km/h en m/s."""
     return speed_kmh / 3.6
@@ -96,7 +98,18 @@ def create_graph_from_osm_data(roads):
         way: LineString = loads(way_wkt)  # Convertir WKT en objet LineString
 
         coords = list(way.coords)  # Liste des points (lon, lat)
-        raise RuntimeError(coords)
+        
+        # TODO FIX : changer le syteme de coordonnées dans la DB et pas a chaque run du code
+        # Transformer pour passer de EPSG:3857 (métrique) à EPSG:4326 (lat/lon)
+        transformer = Transformer.from_crs("EPSG:3857", "EPSG:4326", always_xy=True)
+
+        if "pos" in self.graph.nodes[node]:
+            x, y = self.graph.nodes[node]["pos"]
+            lon, lat = transformer.transform(x, y)  # Conversion en lat/lon
+            node_location = (lat, lon)
+        else:
+            raise ValueError(f"Le nœud {node} ne contient pas de coordonnées 'pos' : {self.graph.nodes[node]}")
+
         if len(coords) < 2:
             continue  # Éviter les géométries trop courtes
 
