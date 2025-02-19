@@ -74,6 +74,10 @@ def submit_form() -> Union[str, Dict]:
 
         epervier = Epervier(adresse, direction_fuite)
         isoA, isoB = epervier.get_graph_from_isochrones(total_secondes)
+        
+        from debug.debug import pretty_print_graph_infos
+        raise RuntimeError(pretty_print_graph_infos(epervier.graph))
+        
         points = epervier.select_points(strat, num)
         
         return {'isoA' : isoA, 'isoB' : isoB, "points" : points}

@@ -100,7 +100,7 @@ $('#go-btn').click(function(event) {
             style: { color: "red", weight: 2, opacity: 0.7 },
         }).addTo(map);
         
-        console.log(response);
+        console.log(Object.keys(response));
         if (response.points) {
             points = response.points
             markerColor = $('#dot_color').val()

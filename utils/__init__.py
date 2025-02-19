@@ -8,7 +8,7 @@ from .utils import (
     get_angle_fuite,
     lire_liste_du_fichier,
     get_isochrone,
-    create_graph_from_osm_data,
+    create_graph_from_postgreSQL,
     measure_time,
     normalize_attribute,
     get_top_node
@@ -22,7 +22,7 @@ __all__ = [
     "get_angle_fuite",
     "lire_liste_du_fichier",
     "get_isochrone",
-    "create_graph_from_osm_data",
+    "create_graph_from_postgreSQL",
     "measure_time",
     "normalize_attribute",
     "get_top_node"

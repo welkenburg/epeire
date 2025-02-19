@@ -3,8 +3,6 @@ import osmnx as ox  # Pour manipuler des réseaux OSM
 import networkx as nx
 from typing import Tuple, List, Dict, Any
 from shapely.geometry import Polygon, mapping
-from shapely.ops import transform
-import psycopg2
 import json
 import math
 from geopy.distance import geodesic
@@ -14,7 +12,7 @@ from concurrent.futures import ThreadPoolExecutor
 from utils.utils import (
     get_isochrone,
     get_top_node,
-    create_graph_from_osm_data,
+    create_graph_from_postgreSQL,
     get_angle_fuite
 )
 
@@ -51,24 +49,8 @@ class Epervier:
             isochrone_B : Polygon = get_isochrone(self.starting_coords, time)
             valid_zone = isochrone_A.difference(isochrone_B)
 
-            conn = psycopg2.connect(**self.db_params)
-            cursor = conn.cursor()
+            self.graph = create_graph_from_postgreSQL(self.db_params, valid_zone)
 
-            query = """
-                SELECT ST_AsText(way), osm_id 
-                FROM planet_osm_line
-                LIMIT 10;
-            """
-                # WHERE ST_Intersects(way, ST_GeomFromText(%s, 4326))
-
-            cursor.execute(query, (valid_zone.wkt,))
-            roads = cursor.fetchall()
-            # LE roads n'est pas au bont format TODO
-            conn.close()
-
-            # Utilisation de la fonction auxiliaire pour créer le graphe
-            G = create_graph_from_osm_data(roads)
-            self.graph = G
             return mapping(isochrone_A), mapping(isochrone_B)
         except Exception as e:
             raise RuntimeError(f"Erreur lors du chargement du graphe depuis la base de donnees: {e}")
@@ -115,7 +97,7 @@ class Epervier:
                 vitesse_max = max(maxspeeds) if maxspeeds else 30
 
                 # for node in self.graph.nodes():
-                #     raise RuntimeError(self.graph.nodes[node])  # Vérifie les attributs stockés
+                #     raise RuntimeError(node, self.graph.nodes[node])  # Vérifie les attributs stockés
                 #     break  # Affiche un seul nœud pour éviter un flood
 
                 # Distance au point de commission des faits
@@ -222,8 +204,9 @@ class Epervier:
             # Algorithme glouton pour la sélection des nœuds
             top_nodes: List[Any] = []
             self.__calculate_node_score(strategie)
+            raise RuntimeError(self.graph.nodes)
             top_nodes = sorted(self.graph.nodes(data=True), key=lambda x: x[1]["score"], reverse=True)[:n_points]
-
+            raise RuntimeError(top_nodes)
             # for point in range(n_points - 1):
             #     top_node = get_top_node(self.graph, top_nodes)
             #     top_nodes.append(top_node)
