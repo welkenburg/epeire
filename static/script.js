@@ -92,13 +92,13 @@ $('#go-btn').click(function(event) {
 
         // Traiter la réponse du serveur
         console.log(`temps de chargement : ${response.dt}s`)
-        L.geoJSON(response.isoA, {
+        L.geoJSON(response.valid_zone, {
             style: { color: "blue", weight: 2, opacity: 0.7 },
         }).addTo(map);
 
-        L.geoJSON(response.isoB, {
-            style: { color: "red", weight: 2, opacity: 0.7 },
-        }).addTo(map);
+        // L.geoJSON(response.isoB, {
+        //     style: { color: "red", weight: 2, opacity: 0.7 },
+        // }).addTo(map);
         
         console.log(Object.keys(response));
         if (response.points) {

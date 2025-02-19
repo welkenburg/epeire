@@ -39,7 +39,7 @@ class Epervier:
         except Exception as e:
             raise RuntimeError(f"Erreur lors de l'obtention de l'angle de fuite: {e}")
         
-    def get_graph_from_isochrones(self, time, delta_time : float = 2*60) -> nx.MultiDiGraph:
+    def get_graph_from_isochrones(self, time, delta_time : float = 10*60) -> nx.MultiDiGraph:
         """
         Charge le graphe depuis un fichier osm.pbf à partir de deux isochrones
         Retourne ces deux isochrones
@@ -51,7 +51,7 @@ class Epervier:
 
             self.graph = create_graph_from_postgreSQL(self.db_params, valid_zone)
 
-            return mapping(isochrone_A), mapping(isochrone_B)
+            return mapping(isochrone_A), mapping(isochrone_B), mapping(valid_zone)
         except Exception as e:
             raise RuntimeError(f"Erreur lors du chargement du graphe depuis la base de donnees: {e}")
 

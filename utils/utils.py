@@ -49,11 +49,11 @@ def angle_diff(angleA: float, angleB: float) -> float:
         logging.error(f"Erreur dans angle_diff: {e}")
         raise RuntimeError(f"Erreur dans angle_diff: {e}")
 
-def get_angle_fuite(direction : str | int) -> float:
+def get_angle_fuite(direction : str | int) -> float | None:
     logging.debug(f"Getting angle fuite for direction {direction}")
     db = {"None" : None, "E" : 0, "NE" : 45, "N" : 90, "NO" : 135, "O" : 180, "SO" : 225, "S" : 270, "SE" : 315}
     if isinstance(direction, str):
-        return float(db[direction])
+        return db[direction]
     if isinstance(direction, int):
         return float(direction)
     raise RuntimeError(f"Il y a une erreur dans get_direction_fuite pour la direction suivante : {direction}")
@@ -82,7 +82,7 @@ def get_isochrone(center_coords : tuple[float, float], time_lim) -> Polygon:
             response.raise_for_status()
             isochrone : dict = response.json()
             polygon_feature = isochrone.get('polygons', [None])[0]
-            if polygon_feature is None:
+            if (polygon_feature is None):
                 raise ValueError("Polygon isochrone non trouvé dans la réponse.")
             
             polygon = polygon_feature.get("geometry")
@@ -98,78 +98,73 @@ def get_isochrone(center_coords : tuple[float, float], time_lim) -> Polygon:
 
 def create_graph_from_postgreSQL(db_params: dict, valid_zone: Polygon) -> nx.MultiDiGraph:
     """
-    Crée un MultiDiGraph à partir des données osm récupérées depuis la base de donnée postgreSQL
-    
+    Crée un MultiDiGraph à partir des données OSM récupérées depuis PostgreSQL, en optimisant les performances.
+
     Args:
-        db_params (dict):       Paramètres de connexion à la base de données générée à partir de osm2pgsql et d'un fichier .osm.pbf
-        valid_zone (Polygon):   Zone de délimitation du graph à créer (restreint la taille du graph)
+        db_params (dict): Paramètres de connexion PostgreSQL.
+        valid_zone (Polygon): Zone de délimitation du graphe.
 
     Returns:
-        nx.MultiDiGraph: Le graphe construit à partir de ces données (ressemble à un graph généré par osmnx)
+        nx.MultiDiGraph: Le graphe construit.
     """
     G = nx.MultiDiGraph()
     
     try:
-        logging.debug(f"Connecting to PostgreSQL with params {db_params}")
-        conn = psycopg2.connect(**db_params)
-        cur = conn.cursor()
-        
-        # Récupération des 100 premiers nœuds OSM
-        logging.debug("Fetching first 100 OSM nodes")
-        cur.execute("""
-            SELECT id, lat, lon, tags 
-            FROM planet_osm_nodes
-            LIMIT 100
-        """)
-        
-        nodes = {}
-        for node_id, lat, lon, tags in cur.fetchall():
-            point = Point(lon / 10000000.0, lat / 10000000.0)  # Convert lat/lon to degrees
-            if tags is None:
-                tags = {}
-            G.add_node(node_id, x=point.x, y=point.y, **tags)
-            nodes[node_id] = point
-        
-        logging.debug(f"Total nodes fetched: {len(nodes)}")
-        
-        # Récupération des arêtes correspondant aux nœuds sélectionnés
-        logging.debug("Fetching edges for selected nodes")
-        cur.execute("""
-            SELECT id, nodes, tags 
-            FROM planet_osm_ways
-            WHERE id IN (
-                SELECT DISTINCT id FROM planet_osm_ways
-                WHERE nodes && ARRAY(
-                    SELECT id FROM planet_osm_nodes
-                    LIMIT 100
-                )
-            )
-        """)
-        
-        for way_id, node_list, tags in cur.fetchall():
-            if tags is None:
-                tags = {}
-            logging.debug(f"Fetched way {way_id} with nodes {node_list} and tags {tags}")
-            
-            for u, v in zip(node_list[:-1], node_list[1:]):
-                if u in nodes and v in nodes:
-                    logging.debug(f"Adding edge from {u} to {v} with key {way_id}")
-                    G.add_edge(u, v, key=way_id, **tags)
-        
-        logging.debug(f"Total edges in graph: {G.number_of_edges()}")
-        
+        logging.debug("Connexion à PostgreSQL...")
+        with psycopg2.connect(**db_params) as conn:
+            with conn.cursor() as cur:
+                # Récupération des nœuds valides dans la zone
+                logging.debug("Récupération des nœuds valides...")
+                cur.execute("""
+                    SELECT id, lat * 1e-7 AS lat, lon * 1e-7 AS lon, tags
+                    FROM planet_osm_nodes
+                    WHERE ST_Intersects(
+                        ST_SetSRID(ST_MakePoint(lon * 1e-7, lat * 1e-7), 4326),
+                        ST_GeomFromText(%s, 4326)
+                    ) AND tags ? 'highway';
+                """, (valid_zone.wkt,))
+
+                nodes = {row[0]: (row[1], row[2], row[3] or {}) for row in cur.fetchall()}
+                G.add_nodes_from((nid, {"x": lon, "y": lat, **tags}) for nid, (lat, lon, tags) in nodes.items())
+
+                logging.debug(f"Nombre de nœuds récupérés : {len(nodes)}")
+
+                # Récupération des arêtes en lien avec les nœuds valides
+                logging.debug("Récupération des arêtes...")
+                cur.execute("""
+                    WITH valid_nodes AS (
+                        SELECT id FROM planet_osm_nodes
+                        WHERE ST_Intersects(
+                            ST_SetSRID(ST_MakePoint(lon * 1e-7, lat * 1e-7), 4326),
+                            ST_GeomFromText(%s, 4326)
+                        ) AND tags ? 'highway'
+                    )
+                    SELECT w.id, w.nodes, w.tags
+                    FROM planet_osm_ways w
+                    WHERE w.tags ? 'highway'
+                    AND w.nodes && ARRAY(SELECT id FROM valid_nodes);
+                """, (valid_zone.wkt,))
+
+                edges = []
+                for way_id, node_list, way_tags in cur.fetchall():
+                    if not way_tags:
+                        way_tags = {}
+                    
+                    filtered_nodes = [nid for nid in node_list if nid in nodes]
+                    edges.extend((filtered_nodes[i], filtered_nodes[i+1], way_id, way_tags) for i in range(len(filtered_nodes) - 1))
+
+                G.add_edges_from((u, v, {"key": way_id, **tags}) for u, v, way_id, tags in edges)
+
+                logging.debug(f"Nombre d'arêtes récupérées : {len(edges)}")
+
     except psycopg2.Error as e:
-        logging.error(f"Erreur PostgreSQL: {e}")
+        logging.error(f"Erreur PostgreSQL : {e}")
     except Exception as e:
-        logging.error(f"Erreur inattendue: {e}")
-    finally:
-        if 'cur' in locals():
-            cur.close()
-        if 'conn' in locals():
-            conn.close()
-    
-    logging.debug(f"Graph created with {G.number_of_nodes()} nodes and {G.number_of_edges()} edges")
+        logging.error(f"Erreur inattendue : {e}")
+
+    logging.debug(f"Graphe créé avec {G.number_of_nodes()} nœuds et {G.number_of_edges()} arêtes")
     return G
+
 
 def measure_time(f):
     @wraps(f)
