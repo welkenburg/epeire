@@ -73,11 +73,11 @@ def submit_form() -> Union[str, Dict]:
             return {'error': 'Stratégie invalide'}, 400
 
         epervier = Epervier(adresse, direction_fuite)
-        isoA, isoB, valid_zone = epervier.get_graph_from_isochrones(total_secondes)
+        result = epervier.get_graph_from_isochrones(total_secondes)
         
-        points = epervier.select_points(strat, num)
+        # points = epervier.select_points(strat, num)
         
-        return {'isoA' : isoA, 'isoB' : isoB,  "valid_zone" : valid_zone, "points" : points}
+        return result #{'isoA' : isoA, 'isoB' : isoB,  "valid_zone" : valid_zone} #, "points" : points}
     except Exception as e:
         return {'error': f"Erreur lors du traitement du formulaire: {e}"}
 

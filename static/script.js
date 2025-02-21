@@ -91,15 +91,35 @@ $('#go-btn').click(function(event) {
     $.post('/submit', formData, function(response) {
 
         // Traiter la réponse du serveur
-        console.log(`temps de chargement : ${response.dt}s`)
+        console.log(`temps de chargement : ${response.dt}s`);
+        console.log(response.graph);
         L.geoJSON(response.valid_zone, {
             style: { color: "blue", weight: 2, opacity: 0.7 },
         }).addTo(map);
 
-        // L.geoJSON(response.isoB, {
-        //     style: { color: "red", weight: 2, opacity: 0.7 },
-        // }).addTo(map);
-        
+        // Ajout des x premiers nœuds (cercles verts translucides)
+        response.graph.nodes.forEach(node => {
+            L.circleMarker([node.lat, node.lon], {
+            radius: 4,
+            color: "green",
+            fillColor: "green",
+            fillOpacity: 0.5
+            }).addTo(map);
+        });
+
+        // Ajout des arêtes (lignes vertes)
+        response.graph.edges.slice(0, 10000).forEach(edge => {
+            let source = response.graph.nodes.find(n => n.id === edge.source);
+            let target = response.graph.nodes.find(n => n.id === edge.target);
+
+            if (source && target) {
+                L.polyline([[source.lat, source.lon], [target.lat, target.lon]], {
+                    color: "green",
+                    weight: 2
+                }).addTo(map);
+            }
+        });
+
         console.log(Object.keys(response));
         if (response.points) {
             points = response.points

@@ -7,6 +7,7 @@ import json
 import math
 from geopy.distance import geodesic
 from concurrent.futures import ThreadPoolExecutor
+from flask import jsonify
 
 # Import depuis le dossier utils
 from utils.utils import (
@@ -51,7 +52,22 @@ class Epervier:
 
             self.graph = create_graph_from_postgreSQL(self.db_params, valid_zone)
 
-            return mapping(isochrone_A), mapping(isochrone_B), mapping(valid_zone)
+            nodes = [
+                {"id": nid, "lat": data["y"], "lon": data["x"]}
+                for nid, data in self.graph.nodes(data=True)
+            ]
+            
+            edges = [
+                {"source": u, "target": v}
+                for u, v, _ in self.graph.edges(keys=True)
+            ]
+
+            return {
+                'isoA': mapping(isochrone_A),
+                'isoB': mapping(isochrone_B),
+                'valid_zone': mapping(valid_zone),
+                'graph': {"nodes": nodes, "edges": edges}
+            }
         except Exception as e:
             raise RuntimeError(f"Erreur lors du chargement du graphe depuis la base de donnees: {e}")
 

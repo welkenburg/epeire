@@ -117,11 +117,11 @@ def create_graph_from_postgreSQL(db_params: dict, valid_zone: Polygon) -> nx.Mul
                 logging.debug("Récupération des nœuds valides...")
                 cur.execute("""
                     SELECT id, lat * 1e-7 AS lat, lon * 1e-7 AS lon, tags
-                    FROM planet_osm_nodes
+                    FROM road_ends
                     WHERE ST_Intersects(
                         ST_SetSRID(ST_MakePoint(lon * 1e-7, lat * 1e-7), 4326),
                         ST_GeomFromText(%s, 4326)
-                    ) AND tags ? 'highway';
+                    );
                 """, (valid_zone.wkt,))
 
                 nodes = {row[0]: (row[1], row[2], row[3] or {}) for row in cur.fetchall()}
@@ -130,32 +130,32 @@ def create_graph_from_postgreSQL(db_params: dict, valid_zone: Polygon) -> nx.Mul
                 logging.debug(f"Nombre de nœuds récupérés : {len(nodes)}")
 
                 # Récupération des arêtes en lien avec les nœuds valides
-                logging.debug("Récupération des arêtes...")
-                cur.execute("""
-                    WITH valid_nodes AS (
-                        SELECT id FROM planet_osm_nodes
-                        WHERE ST_Intersects(
-                            ST_SetSRID(ST_MakePoint(lon * 1e-7, lat * 1e-7), 4326),
-                            ST_GeomFromText(%s, 4326)
-                        ) AND tags ? 'highway'
-                    )
-                    SELECT w.id, w.nodes, w.tags
-                    FROM planet_osm_ways w
-                    WHERE w.tags ? 'highway'
-                    AND w.nodes && ARRAY(SELECT id FROM valid_nodes);
-                """, (valid_zone.wkt,))
+                # logging.debug("Récupération des arêtes...")
+                # cur.execute("""
+                #     WITH valid_nodes AS (
+                #         SELECT id
+                #         FROM filtered_nodes
+                #         WHERE ST_Intersects(
+                #             ST_SetSRID(ST_MakePoint(lon * 1e-7, lat * 1e-7), 4326),
+                #             ST_GeomFromText(%s, 4326)
+                #         ) LIMIT 10000
+                #     )
+                #     SELECT w.id, w.nodes, w.tags
+                #     FROM filtered_ways w
+                #     WHERE w.nodes && ARRAY(SELECT id FROM valid_nodes);
+                # """, (valid_zone.wkt,))
 
-                edges = []
-                for way_id, node_list, way_tags in cur.fetchall():
-                    if not way_tags:
-                        way_tags = {}
+                # edges = []
+                # for way_id, node_list, way_tags in cur.fetchall():
+                #     if not way_tags:
+                #         way_tags = {}
                     
-                    filtered_nodes = [nid for nid in node_list if nid in nodes]
-                    edges.extend((filtered_nodes[i], filtered_nodes[i+1], way_id, way_tags) for i in range(len(filtered_nodes) - 1))
+                #     filtered_nodes = [nid for nid in node_list if nid in nodes]
+                #     edges.extend((filtered_nodes[i], filtered_nodes[i+1], way_id, way_tags) for i in range(len(filtered_nodes) - 1))
 
-                G.add_edges_from((u, v, {"key": way_id, **tags}) for u, v, way_id, tags in edges)
+                # G.add_edges_from((u, v, {"key": way_id, **tags}) for u, v, way_id, tags in edges)
 
-                logging.debug(f"Nombre d'arêtes récupérées : {len(edges)}")
+                # logging.debug(f"Nombre d'arêtes récupérées : {len(edges)}")
 
     except psycopg2.Error as e:
         logging.error(f"Erreur PostgreSQL : {e}")
