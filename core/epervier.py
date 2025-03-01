@@ -12,7 +12,16 @@ from concurrent.futures import ThreadPoolExecutor
 # Import depuis le dossier utils
 from utils.utils import (
     get_isochrone,
-    get_angle_fuite
+    get_angle_fuite,
+)
+
+from utils.db_utils import (
+    get_db_attributes,
+    set_distance_to_start,
+    create_table_from_isochrone,
+    normalize_columns,
+    set_difference_angle,
+    set_score,
 )
 
 class Epervier:
@@ -29,7 +38,9 @@ class Epervier:
         except Exception as e:
             raise RuntimeError(f"Erreur lors de l'obtention de l'angle de fuite: {e}")
         
-    def get_graph_from_isochrones(self, time, delta_time : float = 10*60) -> nx.MultiDiGraph:
+        self.table_name: str = "zone_valide"
+
+    def get_graph_from_isochrones(self, time, delta_time : float = 5*60) -> nx.MultiDiGraph:
         """
         Charge le graphe depuis un fichier osm.pbf à partir de deux isochrones
         Retourne ces deux isochrones
@@ -39,8 +50,8 @@ class Epervier:
             isochrone_B : Polygon = get_isochrone(self.starting_coords, time)
             valid_zone = isochrone_A.difference(isochrone_B)
 
-            pass
-            # Création du graphe
+            # création d'une table temporaire qui contient les noeuds dans la zone valide
+            create_table_from_isochrone(self.table_name, valid_zone)
 
             return {
                 'isoA': mapping(isochrone_A),
@@ -53,31 +64,22 @@ class Epervier:
 
     def __add_graph_infos(self):
         """
-        Ajoute et normalise les informations aux nœuds du graphe en parallèle :
-        - Nombre d'arêtes adjacentes
-        - Vitesse maximale autorisée
-        - Distance au point de commission des faits
-        - Différence angulaire avec la direction de fuite
+        Ajoute et normalise les informations aux nœuds du graphe :
+        - Nombre d'arêtes adjacentes -> statique
+        - Vitesse maximale autorisée (min, max, mean) -> statique
+        - Nombre de voies sur la route (min, max, mean) -> statique
+        - Distance au point de commission des faits -> dynamique
+        - Différence angulaire avec la direction de fuite -> dynamique
         """
-        pass # TODO utiliser les fonctions de db_utils pour ajouter les informations
-        
-    
+        # ajouter la distance au point de départ
+        set_distance_to_start(self.table_name,self.starting_coords)
 
-    def __calculate_node_score(self, strategie: dict[str, float]) -> None:
-        """
-        Calcule un score pour chaque nœud en parallèle en utilisant des facteurs pondérés.
+        # ajouter la différence angulaire avec la direction de fuite
+        set_difference_angle(self.table_name,self.starting_coords, self.angle_fuite)
 
-        :param strategie: Dictionnaire contenant les poids pour chaque facteur.
-                        Exemple :
-                        {
-                            "nombre_routes_adjacentes_norm": 0.3,
-                            "vitesse_max_norm": 0.2,
-                            "distance_point_depart_norm": -0.4,
-                            "ecart_direction_fuite_norm": 0.1
-                        }
-        """
-        pass # TODO utiliser les fonctions de db_utils pour calculer les scores
-
+        # normaliser les colonnes
+        attrs = get_db_attributes(blacklist=['id', 'osmid', 'geometry'], table_name=self.table_name)
+        normalize_columns(self.table_name, attrs)
 
     def __update_graph_score(self, strategie : dict[str, float], node_id: int):
         pass
@@ -89,6 +91,13 @@ class Epervier:
         try:
             # On ajoute les informations au graphe
             self.__add_graph_infos()
+
+            geoms = set_score(self.table_name, strategie)
+            
+            # on récupère les n_points meilleurs points qu'on traduit en lat, lon
+            return geoms[:n_points]
+        except Exception as e:
+            raise RuntimeError(f"Erreur lors de la sélection des points: {e}")
             
             # Algorithme glouton pour la sélection des nœuds
             top_nodes: List[Any] = []

@@ -51,7 +51,7 @@ def angle_diff(angleA: float, angleB: float) -> float:
 
 def get_angle_fuite(direction : str | int) -> float | None:
     logging.debug(f"Getting angle fuite for direction {direction}")
-    db = {"None" : None, "E" : 0, "NE" : 45, "N" : 90, "NO" : 135, "O" : 180, "SO" : 225, "S" : 270, "SE" : 315}
+    db = {"None" : None, "E" : 90, "NE" : 45, "N" : 0, "NO" : 315, "O" : 270, "SO" : 225, "S" : 180, "SE" : 135}
     if isinstance(direction, str):
         return db[direction]
     if isinstance(direction, int):

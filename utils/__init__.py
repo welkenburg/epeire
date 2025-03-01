@@ -12,6 +12,9 @@ from .utils import (
 
 from .db_utils import (
     get_db_attributes,
+    normalize_columns,
+    set_distance_to_start,
+    create_table_from_isochrone,
 )
 
 __all__ = [
@@ -23,5 +26,8 @@ __all__ = [
     "get_isochrone",
     "measure_time",
 
-    "get_db_attributes"
+    "get_db_attributes",
+    "normalize_columns",
+    "set_distance_to_start",
+    "create_table_from_isochrone",
 ]

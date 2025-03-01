@@ -28,7 +28,8 @@ def index() -> str:
     try:
         modes = load_data(modes_file)
         basic = load_menu(modes)
-        attrs = get_db_attributes()
+        attrs = get_db_attributes(blacklist=['id', 'osmid', 'geometry'])
+        attrs += ["distance de l'origine", "angle"] # TODO Comment faire ca dynamiquement ?
         advanced = load_advanced_menu(attrs)
         return render_template('index.html', strategie_basic=basic, strategie_advanced=advanced)
     except Exception as e:
@@ -76,9 +77,9 @@ def submit_form() -> Union[str, Dict]:
         epervier = Epervier(adresse, direction_fuite)
         result = epervier.get_graph_from_isochrones(total_secondes)
         
-        # points = epervier.select_points(strat, num)
+        points = epervier.select_points(strat, num)
         
-        return result #{'isoA' : isoA, 'isoB' : isoB,  "valid_zone" : valid_zone} #, "points" : points}
+        return {**result, "points": points}
     except Exception as e:
         return {'error': f"Erreur lors du traitement du formulaire: {e}"}
 

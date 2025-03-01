@@ -1,10 +1,10 @@
 {
     "force": {
         "weights" : {
-            "nombre_routes_adjacentes": 0.3,
-            "vitesse_max": 0.2,
-            "distance_point_depart": -0.4,
-            "ecart_direction_fuite": 0.1
+            "degree": 0.3,
+            "max_speed": 0.9,
+            "distance_to_start": -0.4,
+            "difference_angle": -0.1
         },
         "points_repeltion" : 0.6
     }
