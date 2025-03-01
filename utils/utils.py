@@ -3,7 +3,7 @@ import networkx as nx
 from math import atan2, degrees
 from typing import Any
 import requests
-from shapely.geometry import shape, Polygon, Point
+from shapely.geometry import shape, Polygon
 from functools import wraps
 from time import time
 from flask import jsonify
@@ -58,18 +58,6 @@ def get_angle_fuite(direction : str | int) -> float | None:
         return float(direction)
     raise RuntimeError(f"Il y a une erreur dans get_direction_fuite pour la direction suivante : {direction}")
 
-def lire_liste_du_fichier(nom_fichier: str) -> list:
-    """
-    Lit et retourne la liste des lignes d'un fichier.
-    """
-    try:
-        logging.debug(f"Reading file {nom_fichier}")
-        with open(nom_fichier, 'r') as f:
-            return [line.strip() for line in f.readlines()]
-    except Exception as e:
-        logging.error(f"Erreur dans lire_liste_du_fichier ('{nom_fichier}'): {e}")
-        raise RuntimeError(f"Erreur dans lire_liste_du_fichier ('{nom_fichier}'): {e}")
-
 def get_isochrone(center_coords : tuple[float, float], time_lim) -> Polygon:
         """
         Revoit un polygon, isochrone
@@ -96,76 +84,6 @@ def get_isochrone(center_coords : tuple[float, float], time_lim) -> Polygon:
             logging.error(f"Erreur dans get_isochrone: {e}")
             raise RuntimeError(f"Erreur dans get_isochrone: {e}")
 
-def create_graph_from_postgreSQL(db_params: dict, valid_zone: Polygon) -> nx.MultiDiGraph:
-    """
-    Crée un MultiDiGraph à partir des données OSM récupérées depuis PostgreSQL, en optimisant les performances.
-
-    Args:
-        db_params (dict): Paramètres de connexion PostgreSQL.
-        valid_zone (Polygon): Zone de délimitation du graphe.
-
-    Returns:
-        nx.MultiDiGraph: Le graphe construit.
-    """
-    G = nx.MultiDiGraph()
-    
-    try:
-        logging.debug("Connexion à PostgreSQL...")
-        with psycopg2.connect(**db_params) as conn:
-            with conn.cursor() as cur:
-                # Récupération des nœuds valides dans la zone
-                logging.debug("Récupération des nœuds valides...")
-                cur.execute("""
-                    SELECT id, lat * 1e-7 AS lat, lon * 1e-7 AS lon, tags
-                    FROM road_ends
-                    WHERE ST_Intersects(
-                        ST_SetSRID(ST_MakePoint(lon * 1e-7, lat * 1e-7), 4326),
-                        ST_GeomFromText(%s, 4326)
-                    );
-                """, (valid_zone.wkt,))
-
-                nodes = {row[0]: (row[1], row[2], row[3] or {}) for row in cur.fetchall()}
-                G.add_nodes_from((nid, {"x": lon, "y": lat, **tags}) for nid, (lat, lon, tags) in nodes.items())
-
-                logging.debug(f"Nombre de nœuds récupérés : {len(nodes)}")
-
-                # Récupération des arêtes en lien avec les nœuds valides
-                # logging.debug("Récupération des arêtes...")
-                # cur.execute("""
-                #     WITH valid_nodes AS (
-                #         SELECT id
-                #         FROM filtered_nodes
-                #         WHERE ST_Intersects(
-                #             ST_SetSRID(ST_MakePoint(lon * 1e-7, lat * 1e-7), 4326),
-                #             ST_GeomFromText(%s, 4326)
-                #         ) LIMIT 10000
-                #     )
-                #     SELECT w.id, w.nodes, w.tags
-                #     FROM filtered_ways w
-                #     WHERE w.nodes && ARRAY(SELECT id FROM valid_nodes);
-                # """, (valid_zone.wkt,))
-
-                # edges = []
-                # for way_id, node_list, way_tags in cur.fetchall():
-                #     if not way_tags:
-                #         way_tags = {}
-                    
-                #     filtered_nodes = [nid for nid in node_list if nid in nodes]
-                #     edges.extend((filtered_nodes[i], filtered_nodes[i+1], way_id, way_tags) for i in range(len(filtered_nodes) - 1))
-
-                # G.add_edges_from((u, v, {"key": way_id, **tags}) for u, v, way_id, tags in edges)
-
-                # logging.debug(f"Nombre d'arêtes récupérées : {len(edges)}")
-
-    except psycopg2.Error as e:
-        logging.error(f"Erreur PostgreSQL : {e}")
-    except Exception as e:
-        logging.error(f"Erreur inattendue : {e}")
-
-    logging.debug(f"Graphe créé avec {G.number_of_nodes()} nœuds et {G.number_of_edges()} arêtes")
-    return G
-
-
 def measure_time(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
@@ -186,41 +104,41 @@ def measure_time(f):
         return response  # Cas où ce n'est pas un JSON
     return wrapper
 
-def normalize_attribute(graph: nx.MultiDiGraph, attribute: str) -> None:
-    """
-    Normalise un attribut dans le graphe en utilisant la normalisation Min-Max.
-    """
-    try:
-        logging.debug(f"Normalizing attribute {attribute}")
-        values = [float(graph.nodes[node].get(attribute, 0)) for node in graph.nodes]
-        if not values:
-            return
-        min_value = min(values)
-        max_value = max(values)
-        for node in graph.nodes:
-            value = float(graph.nodes[node].get(attribute, 0))
-            normalized_value = (value - min_value) / (max_value - min_value) if (max_value - min_value) else 0.0
-            graph.nodes[node][f"normalized_{attribute}"] = normalized_value
-    except Exception as e:
-        logging.error(f"Erreur dans normalize_attribute pour '{attribute}': {e}")
-        raise RuntimeError(f"Erreur dans normalize_attribute pour '{attribute}': {e}")
+# def normalize_attribute(graph: nx.MultiDiGraph, attribute: str) -> None:
+#     """
+#     Normalise un attribut dans le graphe en utilisant la normalisation Min-Max.
+#     """
+#     try:
+#         logging.debug(f"Normalizing attribute {attribute}")
+#         values = [float(graph.nodes[node].get(attribute, 0)) for node in graph.nodes]
+#         if not values:
+#             return
+#         min_value = min(values)
+#         max_value = max(values)
+#         for node in graph.nodes:
+#             value = float(graph.nodes[node].get(attribute, 0))
+#             normalized_value = (value - min_value) / (max_value - min_value) if (max_value - min_value) else 0.0
+#             graph.nodes[node][f"normalized_{attribute}"] = normalized_value
+#     except Exception as e:
+#         logging.error(f"Erreur dans normalize_attribute pour '{attribute}': {e}")
+#         raise RuntimeError(f"Erreur dans normalize_attribute pour '{attribute}': {e}")
 
-def get_top_node(graph: nx.MultiDiGraph, blacklist: list) -> Any:
-    """
-    Retourne le nœud avec le meilleur score en excluant ceux de la blacklist.
-    """
-    try:
-        logging.debug(f"Getting top node excluding blacklist {blacklist}")
-        node_scores = nx.get_node_attributes(graph, "node_score")
-        for node in blacklist:
-            if node in node_scores:
-                del node_scores[node]
-        if not node_scores:
-            raise ValueError("Aucun nœud disponible pour la sélection.")
-        return max(node_scores, key=node_scores.get)
-    except Exception as e:
-        logging.error(f"Erreur dans get_top_node: {e}")
-        raise RuntimeError(f"Erreur dans get_top_node: {e}")
+# def get_top_node(graph: nx.MultiDiGraph, blacklist: list) -> Any:
+#     """
+#     Retourne le nœud avec le meilleur score en excluant ceux de la blacklist.
+#     """
+#     try:
+#         logging.debug(f"Getting top node excluding blacklist {blacklist}")
+#         node_scores = nx.get_node_attributes(graph, "node_score")
+#         for node in blacklist:
+#             if node in node_scores:
+#                 del node_scores[node]
+#         if not node_scores:
+#             raise ValueError("Aucun nœud disponible pour la sélection.")
+#         return max(node_scores, key=node_scores.get)
+#     except Exception as e:
+#         logging.error(f"Erreur dans get_top_node: {e}")
+#         raise RuntimeError(f"Erreur dans get_top_node: {e}")
 
 
 

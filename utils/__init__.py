@@ -6,12 +6,12 @@ from .utils import (
     angle,
     angle_diff,
     get_angle_fuite,
-    lire_liste_du_fichier,
     get_isochrone,
-    create_graph_from_postgreSQL,
     measure_time,
-    normalize_attribute,
-    get_top_node
+)
+
+from .db_utils import (
+    get_db_attributes,
 )
 
 __all__ = [
@@ -20,10 +20,8 @@ __all__ = [
     "angle",
     "angle_diff",
     "get_angle_fuite",
-    "lire_liste_du_fichier",
     "get_isochrone",
-    "create_graph_from_postgreSQL",
     "measure_time",
-    "normalize_attribute",
-    "get_top_node"
+
+    "get_db_attributes"
 ]

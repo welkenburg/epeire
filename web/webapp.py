@@ -2,7 +2,8 @@
 from flask import Flask, render_template, request, jsonify
 from geopy.geocoders import Nominatim
 from web.web_utils import load_data, load_menu, load_advanced_menu
-from utils.utils import lire_liste_du_fichier, measure_time
+from utils.utils import measure_time
+from utils.db_utils import get_db_attributes
 from core.epervier import Epervier
 from typing import Dict, Union
 
@@ -27,7 +28,7 @@ def index() -> str:
     try:
         modes = load_data(modes_file)
         basic = load_menu(modes)
-        attrs = lire_liste_du_fichier("data/attributes")
+        attrs = get_db_attributes()
         advanced = load_advanced_menu(attrs)
         return render_template('index.html', strategie_basic=basic, strategie_advanced=advanced)
     except Exception as e:
