@@ -75,7 +75,7 @@ def submit_form() -> Union[str, Dict]:
             return {'error': 'Stratégie invalide'}, 400
 
         epervier = Epervier(adresse, direction_fuite)
-        result = epervier.get_graph_from_isochrones(total_secondes)
+        result = epervier.get_graph_from_isochrones(total_secondes, 10 * 60)
         
         points = epervier.select_points(strat, num)
         

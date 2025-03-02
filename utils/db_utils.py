@@ -6,6 +6,7 @@ import logging
 from typing import Dict, Tuple
 import json
 from shapely import wkt
+import random
 
 DATA_FOLDER: str = "data/"
 
@@ -58,10 +59,13 @@ def create_table_from_isochrone(cur: psycopg2.extensions.cursor, table_name: str
     except Exception as e:
         raise RuntimeError(f"Erreur lors de la création de la table à partir de l'isochrone: {e}")
 
+def set_distance_to_start(table_name : str, starting_point : Tuple[float, float]):
+    return set_distance_to_point(table_name, starting_point, "distance_to_start")
+
 @connect_database
-def set_distance_to_start(cur: psycopg2.extensions.cursor, table_name : str, starting_point: Tuple[float, float]) -> None:
+def set_distance_to_point(cur: psycopg2.extensions.cursor, table_name : str, point: Tuple[float, float], column_name : str) -> None:
     """
-    fonction qui ajoute une colonne distance_to_start à la table filtered_nodes et qui remplit cette colonne avec la distance entre chaque point et le point de départ
+    fonction qui ajoute une colonne {column_name} à la table filtered_nodes et qui remplit cette colonne avec la distance entre chaque point et un point donné.
     """
     try:
         cur.execute(
@@ -69,43 +73,42 @@ def set_distance_to_start(cur: psycopg2.extensions.cursor, table_name : str, sta
             -- Ajout de la colonne si elle n'existe pas
             DO $$
             BEGIN
-                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='{table_name}' AND column_name='distance_to_start') THEN
-                    ALTER TABLE {table_name} ADD COLUMN distance_to_start FLOAT;
+                IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='{table_name}' AND column_name='{column_name}') THEN
+                    ALTER TABLE {table_name} ADD COLUMN {column_name} FLOAT;
                 END IF;
             END $$;
 
             -- Mise à jour de la colonne avec les distances calculées
             UPDATE {table_name}
-            SET distance_to_start = ST_Distance(geometry, ST_Transform(ST_SetSRID(ST_MakePoint({starting_point[1]}, {starting_point[0]}), 4326), 3857));
+            SET {column_name} = ST_Distance(geometry, ST_Transform(ST_SetSRID(ST_MakePoint({point[1]}, {point[0]}), 4326), 3857));
             """
         )
     except Exception as e:
         raise RuntimeError(f"Erreur lors de l'ajout de la colonne distance au point de départ: {e}")
 
 @connect_database
-def normalize_columns(cur: psycopg2.extensions.cursor, table_name: str, attrs: list) -> None:
+def normalize_column(cur: psycopg2.extensions.cursor, table_name: str, attr: str) -> None:
     """
     Normalise les colonnes d'une table donnée.
     """
     try:
-        for attr in attrs:
-            cur.execute(
-                f"""
-                -- Calculer les valeurs min et max
-                WITH stats AS (
-                    SELECT
-                        MIN({attr}) AS min_val,
-                        MAX({attr}) AS max_val
-                    FROM {table_name}
-                )
-                -- Mettre à jour la colonne avec les {attr}s normalisées
-                UPDATE {table_name}
-                SET {attr} = CASE
-                    WHEN (SELECT max_val FROM stats) = (SELECT min_val FROM stats) THEN 0
-                    ELSE ({attr} - (SELECT min_val FROM stats)) / ((SELECT max_val FROM stats) - (SELECT min_val FROM stats))
-                END;
-                """
+        cur.execute(
+            f"""
+            -- Calculer les valeurs min et max
+            WITH stats AS (
+                SELECT
+                    MIN({attr}) AS min_val,
+                    MAX({attr}) AS max_val
+                FROM {table_name}
             )
+            -- Mettre à jour la colonne avec les {attr}s normalisées
+            UPDATE {table_name}
+            SET {attr} = CASE
+                WHEN (SELECT max_val FROM stats) = (SELECT min_val FROM stats) THEN 0
+                ELSE ({attr} - (SELECT min_val FROM stats)) / ((SELECT max_val FROM stats) - (SELECT min_val FROM stats))
+            END;
+            """
+        )
     except Exception as e:
         raise RuntimeError(f"Erreur lors de la normalisation des colonnes: {e}")
     
@@ -159,7 +162,7 @@ def set_difference_angle(cur: psycopg2.extensions.cursor, table_name: str, start
         raise RuntimeError(f"Erreur lors de l'ajout de la colonne difference_angle: {e}")
     
 @connect_database
-def set_score(cur: psycopg2.extensions.cursor, table_name: str, strategie: dict[str, float]) -> list:
+def set_score(cur: psycopg2.extensions.cursor, table_name: str, strategie: dict[str, float]) -> None:
     """
     Calcule le score de chaque point en fonction de la stratégie donnée.
     """
@@ -184,17 +187,41 @@ def set_score(cur: psycopg2.extensions.cursor, table_name: str, strategie: dict[
                 SET score = COALESCE(score, 0) + ({attr} * {weight});
                 """
             )
-        
-        cur.execute(
-            f"""
-            SELECT ST_AsText(ST_Transform(geometry, 4326)) FROM {table_name} ORDER BY score DESC LIMIT 100;
-            """
-        )
-
-        points = []
-        for row in cur.fetchall():
-            point = wkt.loads(row[0])
-            points.append((point.y, point.x))
-        return points
     except Exception as e:
         raise RuntimeError(f"Erreur lors du calcul des scores: {e}")
+
+@connect_database
+def update_score_from_points_repeltion(cur : psycopg2.extensions.cursor, table_name: str, strategie : dict[str, float], column_name : str) -> None:
+    """
+    Met à jour le score d'un nœud donné.
+    """
+    cur.execute(
+        f"""
+        -- Mise à jour de la colonne avec les scores calculés
+        UPDATE {table_name}
+        SET score = COALESCE(score, 0) + ({strategie["points_repeltion"]} * {column_name});
+        """
+    )
+
+@connect_database
+def get_top_point(cur: psycopg2.extensions.cursor, table_name: str) -> Tuple[float, float]:
+    """
+    Retourne le point ayant le score le plus élevé et le supprime de la table.
+    """
+    best_point_index = random.randint(0,4)
+    cur.execute(
+        f"""
+        WITH top_point AS (
+            SELECT ST_AsText(ST_Transform(geometry, 4326)) AS geom, ctid
+            FROM {table_name}
+            ORDER BY score DESC
+            LIMIT 1
+            OFFSET {best_point_index}
+        )
+        DELETE FROM {table_name}
+        WHERE ctid = (SELECT ctid FROM top_point)
+        RETURNING (SELECT geom FROM top_point);
+        """
+    )
+    point = wkt.loads(cur.fetchone()[0])
+    return (point.y, point.x)

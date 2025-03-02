@@ -2,10 +2,10 @@
     "force": {
         "weights" : {
             "degree": 0.3,
-            "max_speed": 0.9,
             "distance_to_start": -0.4,
-            "difference_angle": -0.1
+            "difference_angle": -0.1,
+            "road_importance" : 1
         },
-        "points_repeltion" : 0.6
+        "points_repeltion" : 1000
     }
 }

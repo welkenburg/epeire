@@ -20,6 +20,18 @@ function toggleMenu(menuToShow) {
     $('#' + menuToShow).addClass('active-menu');
 }
 
+function showResponsePopup(message, backgroundColor) {
+    var popup = $('#response-popup');
+    popup.css('background-color', backgroundColor);
+    popup.text(message);
+    popup.fadeIn();
+
+    // Masquer la popup après 5 secondes
+    setTimeout(function() {
+        popup.fadeOut();
+    }, 5000);
+}
+
 // Bouton "Basic" (par défaut sélectionné, donc désactivé)
 $('#basic-btn').click(function() {
     toggleMenu('basic-menu');
@@ -61,6 +73,7 @@ $('#go-btn').click(function(event) {
     var direction_fuite = $('#direction_fuite').val(); // Ou récupérer une valeur spécifique selon le contenu de ce bouton
     var strategie = $('#strategie').val();
     var pts_num = $('#pts_num').val();
+    var print_iso = $('#isochrone').is(':checked');
     
     // Créer un objet avec les données à envoyer
     var formData = {
@@ -79,7 +92,7 @@ $('#go-btn').click(function(event) {
     $.post('/chercher', {adresse: adresse}, function(data){
         if (data.lat && data.lon) {
             // Recentrer la carte et déplacer le marqueur
-            map.setView([data.lat, data.lon], 11);
+            map.setView([data.lat, data.lon], 10);
             marker = L.marker([data.lat, data.lon]).addTo(map);
             markers.push(marker);
         } else {
@@ -94,11 +107,12 @@ $('#go-btn').click(function(event) {
         console.log(`temps de chargement : ${response.dt}s`);
         console.log(`Liste des clés de la réponse : ${Object.keys(response)}`);
         console.log(response);
-        // if (response.valid_zone) {
-        //     L.geoJSON(response.valid_zone, {
-        //         style: { color: "blue", weight: 2, opacity: 0.7 },
-        //     }).addTo(map);
-        // }
+        
+        if (response.valid_zone && print_iso) {
+            L.geoJSON(response.valid_zone, {
+                style: { color: "blue", weight: 2, opacity: 0.1 },
+            }).addTo(map);
+        }
 
         if (response.points) {
             points = response.points
@@ -115,6 +129,9 @@ $('#go-btn').click(function(event) {
         }
         if (response.error) {
             console.log(response.error);
+            showResponsePopup(`[${response.dt.toFixed(2)}s] Une erreur est survenue, voir les logs`, '#ff0000aa');
+        } else {
+            showResponsePopup(`[${response.dt.toFixed(2)}s] Requête traitée avec succès`, '#ffffffaa');
         }
 
         
@@ -138,4 +155,11 @@ $('#rst-btn').click(function(event) {
         map.removeLayer(marker);
     });
     markers = []; // Réinitialise le tableau de marqueurs
+
+    // Supprimer toutes les couches GeoJSON de la carte
+    map.eachLayer(function(layer) {
+        if (layer instanceof L.GeoJSON) {
+            map.removeLayer(layer);
+        }
+    });
 });

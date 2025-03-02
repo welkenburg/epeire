@@ -67,7 +67,8 @@ En effet, voici le résultat :
 # 4. On recommence : création d'une table filtered_line et filtered_nodes qui en découle
 - Premiere étape, création de filtered_line a partir de planet_osm_line
 ```sql
-CREATE TABLE filtred_line AS
+DROP TABLE IF EXISTS filtered_line;
+CREATE TABLE filtered_line AS
 SELECT
     osm_id,
     highway,
@@ -96,7 +97,13 @@ SELECT
                 ELSE 50
             END
     END AS maxspeed,
-    COALESCE(tags->'lanes', '1')::int AS lanes
+    COALESCE(tags->'lanes', '1')::int AS lanes,
+	CASE 
+		WHEN LEFT(ref, 1) in ('A') THEN 3
+		WHEN LEFT(ref, 1) in ('N','M') THEN 2
+		WHEN LEFT(ref, 1) in ('d','D') THEN 1
+		ELSE 0
+	END AS road_importance
 FROM
     planet_osm_line
 WHERE
@@ -105,23 +112,25 @@ WHERE
 
 - Deuxieme étape, création de filtered_nodes à partir de filtered_line
 ```sql
+DROP TABLE IF EXISTS filtered_nodes;
 CREATE TABLE filtered_nodes AS
 WITH sommet AS (
-    SELECT ST_StartPoint(way) AS geometrie , maxspeed, lanes FROM filtered_line
+    SELECT ST_StartPoint(way) AS geometry , maxspeed, lanes, road_importance FROM filtered_line
     UNION ALL
-    SELECT ST_EndPoint(way) AS geometrie, maxspeed, lanes FROM filtered_line
+    SELECT ST_EndPoint(way) AS geometry, maxspeed, lanes, road_importance FROM filtered_line
 )
 SELECT
-	geometrie,
-	count(*) AS degre,
+	geometry,
+	count(*) AS degree,
 	MAX(maxspeed) AS max_speed,
 	AVG(maxspeed) AS mean_speed,
 	MIN(maxspeed) AS min_speed,
 	MAX(lanes) AS max_lane,
 	AVG(lanes) AS mean_lane,
-	MIN(lanes) AS min_lane
+	MIN(lanes) AS min_lane,
+	MAX(road_importance) as road_importance
 FROM sommet
-GROUP BY geometrie;
+GROUP BY geometry;
 ```
 
 !! Nota bene, les résultats ne sont pas optimaux (surtout pour les vitesses, et pour le degre)

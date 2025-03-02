@@ -12,9 +12,14 @@ from .utils import (
 
 from .db_utils import (
     get_db_attributes,
-    normalize_columns,
+    normalize_column,
     set_distance_to_start,
     create_table_from_isochrone,
+    set_distance_to_point,
+    set_difference_angle,
+    set_score,
+    update_score_from_points_repeltion,
+    get_top_point
 )
 
 __all__ = [
@@ -27,7 +32,12 @@ __all__ = [
     "measure_time",
 
     "get_db_attributes",
-    "normalize_columns",
+    "normalize_column",
     "set_distance_to_start",
     "create_table_from_isochrone",
+    "set_distance_to_point",
+    "set_difference_angle",
+    "set_score",
+    "update_score_from_points_repeltion",
+    "get_top_point"
 ]

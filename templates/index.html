@@ -36,7 +36,7 @@
             </div>
     
             <div class="form-group">
-                <label for="direction_fuite" class="form-label">Direction de fuite :</label>
+                <label for="direction_fuite" class="form-label">Direction de fuite* :</label>
                 <select name="direction_fuite" id="direction_fuite" class="form-input">
                     <option value="None" disabled selected>Sélectionnez une direction de fuite</option>
                     <option value="None">pas de direction de fuite</option>
@@ -81,14 +81,20 @@
                 <label for="direction_fuite" class="form-label">couleur des points :</label>
                 <input type="color" id="dot_color" class="form-input" name="dot_color" value="#FF0000" required>
             </div>
+            <div class="form-group">
+                <label for="isochrone" class="form-label checkbox-label">Afficher l'isochrone ? :</label>
+                <input type="checkbox" id="isochrone" class="form-input checkbox-input" name="isochrone" checked>
+            </div>
             <p>* : champs obligatoires</p>
         </form>
 
         <div id="lancer">
-            <button id="rst-btn" class="menu-button ctrl-button">RESET</button>
+            <button id="rst-btn" class="menu-button ctrl-button">REINITIALISER</button>
             <button id="go-btn" class="menu-button ctrl-button">GO</button>
         </div>
     </div>
+
+    <div id="response-popup"></div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>

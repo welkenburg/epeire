@@ -28,6 +28,7 @@ body {
     margin : 10px 10px 0 0;
     z-index: 2;
     width : 30%;
+    max-height: calc(100vh - 40px); /* Limite la hauteur maximale à la hauteur de la fenêtre */
 }
 
 .search-addr {
@@ -46,6 +47,7 @@ button {
 #button-container {
     display: flex;
     justify-content: flex-end;
+    flex-shrink: 0;
 }
 
 .menu-button {
@@ -72,12 +74,14 @@ button {
     background-color: #f8f9faaa;
     padding : 1rem;
     border-radius: 0 0 0.2rem 0.2rem;
+    overflow-y: auto;
 }
 
 #lancer {
     display: flex;
     justify-content: flex-end;
     margin-top : 4px;
+    flex-shrink: 0;
 }
 
 /* Titre du formulaire */
@@ -102,7 +106,7 @@ button {
 .form-group {
     margin-bottom: 15px;
     display: flex;
-    justify-content: flex-end;
+    justify-content: space-between;
     /* align-items: center; */
 }
 
@@ -171,4 +175,21 @@ button {
 .strat-ctrl {
     flex-grow: 1;
     margin : 0 4px 0 4px;
+}
+
+#response-popup {
+    display: none;
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #ffffffaa;
+    color: rgb(0, 0, 0);
+    padding: 10px;
+    border-radius: 5px;
+    z-index: 1000;
+}
+
+.checkbox-input {
+    width: auto; /* Pousse la checkbox vers la droite */
 }
