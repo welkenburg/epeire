@@ -1,6 +1,5 @@
 # core/epervier.py
-import osmnx as ox  # Pour manipuler des réseaux OSM
-import networkx as nx
+import osmnx as ox
 from typing import Tuple, List, Dict, Any
 from shapely.geometry import Polygon, mapping
 
@@ -25,13 +24,16 @@ from utils.db_utils import (
 
 class Epervier:
     def __init__(self, starting_point: str, direction_fuite: float | str = None) -> None:
+        """
+        Initialise la classe Epervier avec un point de départ et une direction de fuite.
+        """
         # Obtention des coordonnées de commission de l'infraction
         try:
             self.starting_coords: Tuple[float, float] = ox.geocode(starting_point)
         except Exception as e:
             raise ValueError(f"Erreur de géocodage pour l'adresse '{starting_point}': {e}")
         
-        # obtention de l'angle de fuite
+        # Obtention de l'angle de fuite
         try:
             self.angle_fuite = get_angle_fuite(direction_fuite)
         except Exception as e:
@@ -39,29 +41,28 @@ class Epervier:
         
         self.table_name: str = "zone_valide"
 
-    def get_graph_from_isochrones(self, time, delta_time : float = 10*60) -> nx.MultiDiGraph:
+    def get_graph_from_isochrones(self, time: float, delta_time: float = 10*60) -> Dict[str, Any]:
         """
-        Charge le graphe depuis un fichier osm.pbf à partir de deux isochrones
-        Retourne ces deux isochrones
+        Charge le graphe depuis un fichier osm.pbf à partir de deux isochrones.
+        Retourne ces deux isochrones et la zone valide.
         """
         try:
-            isochrone_A : Polygon = get_isochrone(self.starting_coords, time + delta_time)
-            isochrone_B : Polygon = get_isochrone(self.starting_coords, time)
+            isochrone_A: Polygon = get_isochrone(self.starting_coords, time + delta_time)
+            isochrone_B: Polygon = get_isochrone(self.starting_coords, time)
             valid_zone = isochrone_A.difference(isochrone_B)
 
-            # création d'une table temporaire qui contient les noeuds dans la zone valide
+            # Création d'une table temporaire qui contient les noeuds dans la zone valide
             create_table_from_isochrone(self.table_name, valid_zone)
 
             return {
                 'isoA': mapping(isochrone_A),
                 'isoB': mapping(isochrone_B),
                 'valid_zone': mapping(valid_zone),
-                # 'graph': {"nodes": nodes, "edges": edges}
             }
         except Exception as e:
-            raise RuntimeError(f"Erreur lors du chargement du graphe depuis la base de donnees: {e}")
+            raise RuntimeError(f"Erreur lors du chargement du graphe depuis la base de données: {e}")
 
-    def __add_graph_infos(self):
+    def __add_graph_infos(self) -> None:
         """
         Ajoute et normalise les informations aux nœuds du graphe :
         - Nombre d'arêtes adjacentes -> statique
@@ -70,13 +71,13 @@ class Epervier:
         - Distance au point de commission des faits -> dynamique
         - Différence angulaire avec la direction de fuite -> dynamique
         """
-        # ajouter la distance au point de départ
-        set_distance_to_start(self.table_name,self.starting_coords)
+        # Ajouter la distance au point de départ
+        set_distance_to_start(self.table_name, self.starting_coords)
 
-        # ajouter la différence angulaire avec la direction de fuite
-        set_difference_angle(self.table_name,self.starting_coords, self.angle_fuite)
+        # Ajouter la différence angulaire avec la direction de fuite
+        set_difference_angle(self.table_name, self.starting_coords, self.angle_fuite)
 
-        # normaliser les colonnes
+        # Normaliser les colonnes
         attrs = get_db_attributes(blacklist=['id', 'osmid', 'geometry'], table_name=self.table_name)
         for attr in attrs:
             normalize_column(self.table_name, attr)
@@ -86,18 +87,18 @@ class Epervier:
         Sélectionne et retourne une liste de points (lat, lon) en fonction de la stratégie et du nombre de points.
         """
         try:
-            # On ajoute les informations au graphe
+            # Ajouter les informations au graphe
             self.__add_graph_infos()
 
             points = []
-            # on récupère les n_points meilleurs points
+            # Récupérer les n_points meilleurs points
             set_score(self.table_name, strategie)
             first_point = get_top_point(self.table_name)
             points.append(first_point)
 
-            # on récupère les n_points - 1 autres points
+            # Récupérer les n_points - 1 autres points
             for i in range(1, n_points):
-                set_distance_to_point(self.table_name, points[-1],f"distance_to_point_{i}")
+                set_distance_to_point(self.table_name, points[-1], f"distance_to_point_{i}")
                 normalize_column(self.table_name, f"distance_to_point_{i}")
                 update_score_from_points_repeltion(self.table_name, strategie, f"distance_to_point_{i}")
                 point = get_top_point(self.table_name)

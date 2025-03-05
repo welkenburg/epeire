@@ -1,10 +1,6 @@
 # utils/__init__.py
 
 from .utils import (
-    kmh_to_ms,
-    ms_to_kmh,
-    angle,
-    angle_diff,
     get_angle_fuite,
     get_isochrone,
     measure_time,
@@ -24,15 +20,10 @@ from .db_utils import (
 )
 
 __all__ = [
-    "kmh_to_ms",
-    "ms_to_kmh",
-    "angle",
-    "angle_diff",
     "get_angle_fuite",
     "get_isochrone",
     "measure_time",
     "time_to_seconds",
-
     "get_db_attributes",
     "normalize_column",
     "set_distance_to_start",

@@ -32,7 +32,10 @@ def connect_database(f):
     return wrapper
 
 @connect_database
-def get_db_attributes(cur: psycopg2.extensions.cursor, blacklist : list, table_name : str = 'filtered_nodes') -> list:
+def get_db_attributes(cur: psycopg2.extensions.cursor, blacklist: list, table_name: str = 'filtered_nodes') -> list:
+    """
+    Récupère les attributs de la base de données en excluant ceux de la blacklist.
+    """
     try:
         cur.execute(f"SELECT column_name FROM information_schema.columns WHERE table_name = '{table_name}';")
         return [row[0] for row in cur.fetchall() if row[0] not in blacklist]
@@ -59,13 +62,16 @@ def create_table_from_isochrone(cur: psycopg2.extensions.cursor, table_name: str
     except Exception as e:
         raise RuntimeError(f"Erreur lors de la création de la table à partir de l'isochrone: {e}")
 
-def set_distance_to_start(table_name : str, starting_point : Tuple[float, float]):
+def set_distance_to_start(table_name: str, starting_point: Tuple[float, float]):
+    """
+    Définit la distance au point de départ.
+    """
     return set_distance_to_point(table_name, starting_point, "distance_to_start")
 
 @connect_database
-def set_distance_to_point(cur: psycopg2.extensions.cursor, table_name : str, point: Tuple[float, float], column_name : str) -> None:
+def set_distance_to_point(cur: psycopg2.extensions.cursor, table_name: str, point: Tuple[float, float], column_name: str) -> None:
     """
-    fonction qui ajoute une colonne {column_name} à la table filtered_nodes et qui remplit cette colonne avec la distance entre chaque point et un point donné.
+    Ajoute une colonne {column_name} à la table filtered_nodes et remplit cette colonne avec la distance entre chaque point et un point donné.
     """
     try:
         cur.execute(
@@ -115,7 +121,7 @@ def normalize_column(cur: psycopg2.extensions.cursor, table_name: str, attr: str
 @connect_database
 def set_difference_angle(cur: psycopg2.extensions.cursor, table_name: str, starting_point: Tuple[float, float], angle_fuite: float) -> None:
     """
-    Ajoute une colonne difference_angle à la table filtered_nodes et remplit cette colonne avec la différence angulaire entre chaque point et la direction de fuite.
+    Ajoute une colonne difference_angle à la table donnée et remplit cette colonne avec la différence angulaire entre chaque point et la direction de fuite.
     """
     try:
         if angle_fuite:
@@ -162,7 +168,7 @@ def set_difference_angle(cur: psycopg2.extensions.cursor, table_name: str, start
         raise RuntimeError(f"Erreur lors de l'ajout de la colonne difference_angle: {e}")
     
 @connect_database
-def set_score(cur: psycopg2.extensions.cursor, table_name: str, strategie: dict[str, float]) -> None:
+def set_score(cur: psycopg2.extensions.cursor, table_name: str, strategie: Dict[str, float]) -> None:
     """
     Calcule le score de chaque point en fonction de la stratégie donnée.
     """
@@ -191,7 +197,7 @@ def set_score(cur: psycopg2.extensions.cursor, table_name: str, strategie: dict[
         raise RuntimeError(f"Erreur lors du calcul des scores: {e}")
 
 @connect_database
-def update_score_from_points_repeltion(cur : psycopg2.extensions.cursor, table_name: str, strategie : dict[str, float], column_name : str) -> None:
+def update_score_from_points_repeltion(cur: psycopg2.extensions.cursor, table_name: str, strategie: Dict[str, float], column_name: str) -> None:
     """
     Met à jour le score d'un nœud donné.
     """
@@ -208,7 +214,7 @@ def get_top_point(cur: psycopg2.extensions.cursor, table_name: str) -> Tuple[flo
     """
     Retourne le point ayant le score le plus élevé et le supprime de la table.
     """
-    best_point_index = random.randint(0,4)
+    best_point_index = random.randint(0, 4)
     cur.execute(
         f"""
         WITH top_point AS (

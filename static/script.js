@@ -1,7 +1,7 @@
 // Initialisation de la carte avec Leaflet
 var map = L.map('map').setView([48.8566, 2.3522], 12); // Centré sur Paris
-        
-// localisation des boutons de zoom
+
+// Localisation des boutons de zoom
 map.zoomControl.setPosition('bottomleft');
 
 // Ajouter une couche de tuiles (map tiles)
@@ -12,19 +12,27 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 // Tableau pour stocker les marqueurs
 var markers = [];
 
-// Fonction pour changer le menu visible
+/**
+ * Fonction pour changer le menu visible
+ * @param {string} menuToShow - Le menu à afficher (basic-menu ou advanced-menu)
+ */
 function toggleMenu(menuToShow) {
     // Cacher tous les menus
     $('.strat-menu').removeClass('active-menu');
     // Afficher le menu sélectionné
     $('.' + menuToShow).addClass('active-menu');
 
-    if(menuToShow == 'basic-menu') {
+    if (menuToShow == 'basic-menu') {
         $('#iso-color-group').hide();
         $('#isochrone').prop('checked', false);
     }
 }
 
+/**
+ * Fonction pour afficher une popup avec un message
+ * @param {string} message - Le message à afficher
+ * @param {string} backgroundColor - La couleur de fond de la popup
+ */
 function showResponsePopup(message, backgroundColor) {
     var popup = $('#response-popup');
     popup.css('background-color', backgroundColor);
@@ -54,12 +62,13 @@ $('#advanced-btn').click(function() {
 // Initialiser avec le menu Basic affiché par défaut
 toggleMenu('basic-menu');
 
-$('#search-form').submit(function(event){
+// Soumission du formulaire de recherche d'adresse
+$('#search-form').submit(function(event) {
     event.preventDefault();
     var adresse = $('#adresse-generale').val();
 
     // Envoyer la requête au backend Flask pour géocoder l'adresse
-    $.post('/chercher', {adresse: adresse}, function(data){
+    $.post('/chercher', { adresse: adresse }, function(data) {
         if (data.lat && data.lon) {
             // Recentrer la carte et déplacer le marqueur
             map.setView([data.lat, data.lon], 12);
@@ -69,25 +78,28 @@ $('#search-form').submit(function(event){
     });
 });
 
+// Soumission du formulaire principal
 $('#go-btn').click(function(event) {
     event.preventDefault(); // Empêche le comportement par défaut du bouton
-    
+
     // Récupérer les valeurs des champs du formulaire
     var adresse = $('#adresse').val();
     var temps_fuite = $('#temps_fuite').val();
-    var direction_fuite = $('#direction_fuite').val(); // Ou récupérer une valeur spécifique selon le contenu de ce bouton
+    var direction_fuite = $('#direction_fuite').val();
     var strategie = $('#strategie').val();
     var pts_num = $('#pts_num').val();
     var print_iso = $('#isochrone').is(':checked');
     var dt = $('#dt').val();
-    
+    var iso_color = $('#iso_color').val();
+
     // Créer un objet avec les données à envoyer
     var formData = {
         adresse: adresse,
         temps_fuite: temps_fuite,
         direction_fuite: direction_fuite,
         strategie: strategie,
-        num: pts_num
+        num: pts_num,
+        iso_color: iso_color
     };
 
     if ($('#dt').is(':visible')) {
@@ -95,11 +107,11 @@ $('#go-btn').click(function(event) {
     }
 
     // Changer l'apparence du bouton "GO" pour indiquer qu'il est en attente
-    $('#go-btn').addClass('waiting'); // Ajouter la classe 'waiting' pour changer le style
+    $('#go-btn').addClass('waiting');
     $('#go-btn').text('En attente...');
 
     // Envoyer la requête au backend Flask pour géocoder l'adresse
-    $.post('/chercher', {adresse: adresse}, function(data){
+    $.post('/chercher', { adresse: adresse }, function(data) {
         if (data.lat && data.lon) {
             // Recentrer la carte et déplacer le marqueur
             map.setView([data.lat, data.lon], 10);
@@ -112,21 +124,20 @@ $('#go-btn').click(function(event) {
 
     // Envoyer la requête POST au serveur Flask
     $.post('/submit', formData, function(response) {
-
         // Traiter la réponse du serveur
         console.log(`temps de chargement : ${response.dt}s`);
         console.log(`Liste des clés de la réponse : ${Object.keys(response)}`);
         console.log(response);
-        
+
         if (response.valid_zone && print_iso) {
             L.geoJSON(response.valid_zone, {
-                style: { color: $("#iso_color").val(), weight: 2, opacity: 0.1 },
+                style: { color: iso_color, weight: 2, opacity: 0.1 },
             }).addTo(map);
         }
 
         if (response.points) {
-            points = response.points
-            markerColor = $('#dot_color').val()
+            points = response.points;
+            markerColor = $('#dot_color').val();
             for (let i = 0; i < points.length; i++) {
                 marker = L.circleMarker(points[i], {
                     color: markerColor, // Couleur de la bordure
@@ -144,9 +155,8 @@ $('#go-btn').click(function(event) {
             showResponsePopup(`[${response.dt.toFixed(2)}s] Requête traitée avec succès`, '#ffffffaa');
         }
 
-        
         // Réinitialiser le bouton à son style initial une fois la réponse reçue
-        $('#go-btn').removeClass('waiting'); // Retirer la classe 'waiting' pour restaurer l'apparence initiale
+        $('#go-btn').removeClass('waiting');
         $('#go-btn').text('GO');
     }).fail(function() {
         // En cas d'erreur, également réinitialiser le bouton
@@ -155,7 +165,6 @@ $('#go-btn').click(function(event) {
         alert("Erreur lors de l'envoi de la requête.");
     });
 });
-
 
 // Fonction pour réinitialiser la carte
 $('#rst-btn').click(function(event) {
@@ -174,24 +183,10 @@ $('#rst-btn').click(function(event) {
     });
 });
 
-// Ajoutez cette fonction pour mettre à jour les valeurs des curseurs
-function updateSliderValue(slider) {
-    var value = slider.value;
-    var valueDisplay = slider.nextElementSibling;
-    valueDisplay.textContent = value;
-}
-
-// Initialiser les valeurs des curseurs
-$('.slider').each(function() {
-    updateSliderValue(this);
-});
-
-// Mettre à jour les valeurs des curseurs en temps réel
-$('.slider').on('input', function() {
-    updateSliderValue(this);
-});
-
-// Ajoutez cette fonction pour mettre à jour les valeurs des curseurs
+/**
+ * Fonction pour mettre à jour les valeurs des curseurs
+ * @param {HTMLElement} slider - L'élément slider à mettre à jour
+ */
 function updateSliderValue(slider) {
     var value = slider.value;
     var valueDisplay = slider.nextElementSibling;
@@ -229,4 +224,4 @@ if ($('#isochrone').is(':checked')) {
     $('#iso-color-group').show();
 } else {
     $('#iso-color-group').hide();
-};
+}

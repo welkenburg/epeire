@@ -7,8 +7,6 @@ from utils.db_utils import get_db_attributes
 from core.epervier import Epervier
 from typing import Dict, Union
 
-
-
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
 
 # Chargement de la clé secrète
@@ -20,6 +18,9 @@ except Exception as e:
 
 modes_file: str = 'data/modes.json'
 
+# Configuration du géocodeur
+geolocator = Nominatim(user_agent="e-pervier")
+
 @app.route('/')
 def index() -> str:
     """
@@ -29,7 +30,7 @@ def index() -> str:
         modes = load_data(modes_file)
         basic = load_menu(modes)
         attrs = get_db_attributes(blacklist=['id', 'osmid', 'geometry'])
-        attrs += ["distance de l'origine", "angle"] # TODO Comment faire ca dynamiquement ?
+        attrs += ["distance de l'origine", "angle"]  # TODO Comment faire ça dynamiquement ?
         advanced = load_advanced_menu(attrs)
         return render_template('index.html', strategie_basic=basic, strategie_advanced=advanced)
     except Exception as e:
@@ -42,12 +43,10 @@ def chercher() -> Dict[str, Union[float, str]]:
     Recherche une adresse et retourne ses coordonnées géographiques.
     """
     try:
-        adresse = request.form['adresse']
-        geolocator = Nominatim(user_agent="myGeocoder")
+        adresse = request.form.get('adresse')
         location = geolocator.geocode(adresse, timeout=10)
         if location:
-            lat, lon = location.latitude, location.longitude
-            return jsonify({'lat': lat, 'lon': lon})
+            return jsonify({'lat': location.latitude, 'lon': location.longitude})
         else:
             return jsonify({'error': 'Adresse non trouvée'}), 404
     except Exception as e:
