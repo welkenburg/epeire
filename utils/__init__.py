@@ -8,6 +8,7 @@ from .utils import (
     get_angle_fuite,
     get_isochrone,
     measure_time,
+    time_to_seconds
 )
 
 from .db_utils import (
@@ -30,6 +31,7 @@ __all__ = [
     "get_angle_fuite",
     "get_isochrone",
     "measure_time",
+    "time_to_seconds",
 
     "get_db_attributes",
     "normalize_column",

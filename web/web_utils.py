@@ -29,7 +29,7 @@ def load_menu(modes: list) -> str:
     try:
         options = [f'<option value="{mode}">{mode}</option>' for mode in modes]
         prompt = (
-            '<label class="form-label">mode* :</label>'
+            '<label for="strategie" class="form-label">mode* :</label>'
             '<select name="strategie" id="strategie" class="form-input" required>'
             '<option value="" disabled selected>Sélectionnez une stratégie</option>'
         )
@@ -45,7 +45,7 @@ def load_advanced_menu(attrs: list) -> str:
     """
     try:
         options = [
-            f'<div class="attr-slide"><input type="checkbox"><label>{attr}</label><input type="range"><label>0</label></div>'
+            f'<div class="slider-container"><label class="slider-label">{attr}</label><input type="range" class="slider-input slider" min="-100" max="100" value="0"><input type="number" class="slider-value" value="0" min="-100" max="100"></div>'
             for attr in attrs
         ]
         prompt = '<div style="display: flex; flex-direction: column">'

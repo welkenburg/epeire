@@ -2,7 +2,7 @@
     "force": {
         "weights" : {
             "degree": 0.3,
-            "distance_to_start": -0.4,
+            "distance_to_start": -1,
             "difference_angle": -0.1,
             "road_importance" : 1
         },

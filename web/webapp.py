@@ -2,7 +2,7 @@
 from flask import Flask, render_template, request, jsonify
 from geopy.geocoders import Nominatim
 from web.web_utils import load_data, load_menu, load_advanced_menu
-from utils.utils import measure_time
+from utils.utils import measure_time, time_to_seconds
 from utils.db_utils import get_db_attributes
 from core.epervier import Epervier
 from typing import Dict, Union
@@ -65,17 +65,17 @@ def submit_form() -> Union[str, Dict]:
         direction_fuite = request.form.get('direction_fuite')
         strategie = request.form.get('strategie')
         num = int(request.form.get("num", "0"))
+        delta_time = request.form.get("dt", "00:10")
         modes = load_data(modes_file)
 
-        # Conversion du temps de fuite
-        heures, minutes = map(int, temps_fuite.split(':'))
-        total_secondes = heures * 3600 + minutes * 60
+        time = time_to_seconds(temps_fuite)
+        dt = time_to_seconds(delta_time)
         strat = modes.get(strategie)
         if strat is None:
             return {'error': 'Stratégie invalide'}, 400
 
         epervier = Epervier(adresse, direction_fuite)
-        result = epervier.get_graph_from_isochrones(total_secondes, 10 * 60)
+        result = epervier.get_graph_from_isochrones(time, dt)
         
         points = epervier.select_points(strat, num)
         

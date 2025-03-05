@@ -7,7 +7,6 @@ from shapely.geometry import shape, Polygon
 from functools import wraps
 from time import time
 from flask import jsonify
-import psycopg2
 import logging
 
 # Configure logging
@@ -104,41 +103,14 @@ def measure_time(f):
         return response  # Cas où ce n'est pas un JSON
     return wrapper
 
-# def normalize_attribute(graph: nx.MultiDiGraph, attribute: str) -> None:
-#     """
-#     Normalise un attribut dans le graphe en utilisant la normalisation Min-Max.
-#     """
-#     try:
-#         logging.debug(f"Normalizing attribute {attribute}")
-#         values = [float(graph.nodes[node].get(attribute, 0)) for node in graph.nodes]
-#         if not values:
-#             return
-#         min_value = min(values)
-#         max_value = max(values)
-#         for node in graph.nodes:
-#             value = float(graph.nodes[node].get(attribute, 0))
-#             normalized_value = (value - min_value) / (max_value - min_value) if (max_value - min_value) else 0.0
-#             graph.nodes[node][f"normalized_{attribute}"] = normalized_value
-#     except Exception as e:
-#         logging.error(f"Erreur dans normalize_attribute pour '{attribute}': {e}")
-#         raise RuntimeError(f"Erreur dans normalize_attribute pour '{attribute}': {e}")
-
-# def get_top_node(graph: nx.MultiDiGraph, blacklist: list) -> Any:
-#     """
-#     Retourne le nœud avec le meilleur score en excluant ceux de la blacklist.
-#     """
-#     try:
-#         logging.debug(f"Getting top node excluding blacklist {blacklist}")
-#         node_scores = nx.get_node_attributes(graph, "node_score")
-#         for node in blacklist:
-#             if node in node_scores:
-#                 del node_scores[node]
-#         if not node_scores:
-#             raise ValueError("Aucun nœud disponible pour la sélection.")
-#         return max(node_scores, key=node_scores.get)
-#     except Exception as e:
-#         logging.error(f"Erreur dans get_top_node: {e}")
-#         raise RuntimeError(f"Erreur dans get_top_node: {e}")
-
-
-
+def time_to_seconds(time_str: str) -> int:
+    """
+    Convertit une chaîne de caractères de temps en secondes.
+    """
+    logging.debug(f"Converting time string {time_str} to seconds")
+    try:
+        heures, minutes = map(int, time_str.split(':'))
+        return heures * 3600 + minutes * 60
+    except Exception as e:
+        logging.error(f"Erreur dans time_to_seconds: {e}")
+        raise RuntimeError(f"Erreur dans time_to_seconds: {e}")

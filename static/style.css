@@ -107,7 +107,6 @@ button {
     margin-bottom: 15px;
     display: flex;
     justify-content: space-between;
-    /* align-items: center; */
 }
 
 /* Labels */
@@ -164,7 +163,7 @@ button {
     display:flex;
 }
 
-#advanced-menu {
+#advanced-strat {
     flex-direction: column;
 }
 
@@ -192,4 +191,30 @@ button {
 
 .checkbox-input {
     width: auto; /* Pousse la checkbox vers la droite */
+}
+
+.slider-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.slider-label {
+    width : 40%;
+    text-align: right;
+    padding-right: 20px;
+}
+
+.slider-input {
+    flex : 1;
+}
+
+.slider-value {
+    margin-left: 10px;
+    font-size: 14px;
+    color: #333;
+}
+
+.slider-value {
+    width: 3rem;
 }

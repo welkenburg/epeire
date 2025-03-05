@@ -1,0 +1,9 @@
+{
+    "nombre d'intersections" : "degree",
+    "vitesse maximale" : "max_speed",
+    "distance à l'origine" : "distance_to_start",
+    "direction de fuite" : "difference_angle",
+    "importance de la route" : "road_importance",
+    "force de répulsion des points" : "points_repeltion",
+    "nombre de voies" : "max_lane"
+}

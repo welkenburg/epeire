@@ -17,7 +17,12 @@ function toggleMenu(menuToShow) {
     // Cacher tous les menus
     $('.strat-menu').removeClass('active-menu');
     // Afficher le menu sélectionné
-    $('#' + menuToShow).addClass('active-menu');
+    $('.' + menuToShow).addClass('active-menu');
+
+    if(menuToShow == 'basic-menu') {
+        $('#iso-color-group').hide();
+        $('#isochrone').prop('checked', false);
+    }
 }
 
 function showResponsePopup(message, backgroundColor) {
@@ -74,6 +79,7 @@ $('#go-btn').click(function(event) {
     var strategie = $('#strategie').val();
     var pts_num = $('#pts_num').val();
     var print_iso = $('#isochrone').is(':checked');
+    var dt = $('#dt').val();
     
     // Créer un objet avec les données à envoyer
     var formData = {
@@ -81,8 +87,12 @@ $('#go-btn').click(function(event) {
         temps_fuite: temps_fuite,
         direction_fuite: direction_fuite,
         strategie: strategie,
-        num : pts_num
+        num: pts_num
     };
+
+    if ($('#dt').is(':visible')) {
+        formData.dt = dt;
+    }
 
     // Changer l'apparence du bouton "GO" pour indiquer qu'il est en attente
     $('#go-btn').addClass('waiting'); // Ajouter la classe 'waiting' pour changer le style
@@ -110,7 +120,7 @@ $('#go-btn').click(function(event) {
         
         if (response.valid_zone && print_iso) {
             L.geoJSON(response.valid_zone, {
-                style: { color: "blue", weight: 2, opacity: 0.1 },
+                style: { color: $("#iso_color").val(), weight: 2, opacity: 0.1 },
             }).addTo(map);
         }
 
@@ -163,3 +173,60 @@ $('#rst-btn').click(function(event) {
         }
     });
 });
+
+// Ajoutez cette fonction pour mettre à jour les valeurs des curseurs
+function updateSliderValue(slider) {
+    var value = slider.value;
+    var valueDisplay = slider.nextElementSibling;
+    valueDisplay.textContent = value;
+}
+
+// Initialiser les valeurs des curseurs
+$('.slider').each(function() {
+    updateSliderValue(this);
+});
+
+// Mettre à jour les valeurs des curseurs en temps réel
+$('.slider').on('input', function() {
+    updateSliderValue(this);
+});
+
+// Ajoutez cette fonction pour mettre à jour les valeurs des curseurs
+function updateSliderValue(slider) {
+    var value = slider.value;
+    var valueDisplay = slider.nextElementSibling;
+    valueDisplay.value = value;
+}
+
+// Initialiser les valeurs des curseurs
+$('.slider').each(function() {
+    updateSliderValue(this);
+});
+
+// Mettre à jour les valeurs des curseurs en temps réel
+$('.slider').on('input', function() {
+    updateSliderValue(this);
+});
+
+// Mettre à jour les curseurs lorsque les zones de texte sont modifiées
+$('.slider-value').on('input', function() {
+    var value = this.value;
+    var slider = this.previousElementSibling;
+    slider.value = value;
+});
+
+// Afficher/masquer le groupe iso-color-group en fonction de la checkbox
+$('#isochrone').change(function() {
+    if (this.checked) {
+        $('#iso-color-group').show();
+    } else {
+        $('#iso-color-group').hide();
+    }
+});
+
+// Initialiser l'état du groupe iso-color-group
+if ($('#isochrone').is(':checked')) {
+    $('#iso-color-group').show();
+} else {
+    $('#iso-color-group').hide();
+};
