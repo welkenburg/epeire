@@ -1,11 +1,14 @@
 {
     "force": {
         "weights" : {
-            "degree": 0.3,
-            "distance_to_start": -1,
-            "difference_angle": -0.1,
-            "road_importance" : 1
+            "degree": 1,
+            "distance_to_start": 0,
+            "difference_angle": -1,
+            "road_importance" : 1,
+            "min_speed" : -0.4
         },
-        "points_repeltion" : 1000
+        "points_repeltion" : 1,
+        "points_repeltion_alpha" : 0.5,
+        "direction_alpha" : 0.1
     }
 }

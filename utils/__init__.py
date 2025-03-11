@@ -16,7 +16,9 @@ from .db_utils import (
     set_difference_angle,
     set_score,
     update_score_from_points_repeltion,
-    get_top_point
+    get_top_point,
+    apply_sigmoid,
+    set_sigmoid
 )
 
 __all__ = [
@@ -32,5 +34,7 @@ __all__ = [
     "set_difference_angle",
     "set_score",
     "update_score_from_points_repeltion",
-    "get_top_point"
+    "get_top_point",
+    "apply_sigmoid",
+    "set_sigmoid",
 ]

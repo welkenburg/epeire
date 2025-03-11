@@ -110,7 +110,7 @@ def normalize_column(cur: psycopg2.extensions.cursor, table_name: str, attr: str
             -- Mettre à jour la colonne avec les {attr}s normalisées
             UPDATE {table_name}
             SET {attr} = CASE
-                WHEN (SELECT max_val FROM stats) = (SELECT min_val FROM stats) THEN 0
+                WHEN (SELECT max_val FROM stats) = (SELECT min_val FROM stats) THEN 0.0
                 ELSE ({attr} - (SELECT min_val FROM stats)) / ((SELECT max_val FROM stats) - (SELECT min_val FROM stats))
             END;
             """
@@ -124,7 +124,7 @@ def set_difference_angle(cur: psycopg2.extensions.cursor, table_name: str, start
     Ajoute une colonne difference_angle à la table donnée et remplit cette colonne avec la différence angulaire entre chaque point et la direction de fuite.
     """
     try:
-        if angle_fuite:
+        if type(angle_fuite) == int:
             cur.execute(
                 f"""
                 -- Ajout de la colonne si elle n'existe pas
@@ -166,7 +166,39 @@ def set_difference_angle(cur: psycopg2.extensions.cursor, table_name: str, start
             )
     except Exception as e:
         raise RuntimeError(f"Erreur lors de l'ajout de la colonne difference_angle: {e}")
-    
+
+@connect_database
+def apply_sigmoid(cur: psycopg2.extensions.cursor, table_name: str, attr: str, scale : float = 1, offset : float = 0) -> None:
+    """
+    Applique la fonction sigmoid sur une colonne donnée.
+    """
+    scale = scale if scale != 0 else 1
+    cur.execute(
+        f"""
+        -- Mise à jour de la colonne avec la fonction sigmoid
+        UPDATE {table_name}
+        SET {attr} = sigmoid({attr}, {offset}, {scale});
+        """
+    )
+
+@connect_database
+def set_sigmoid(cur: psycopg2.extensions.cursor) -> None:
+    """
+    Crée une fonction sigmoid dans la base de données. 
+    """
+    # 5.29330482472 = ln(1.99)
+    cur.execute(
+        f"""
+        -- Création de la fonction sigmoid
+        CREATE OR REPLACE FUNCTION sigmoid(x DOUBLE PRECISION, o DOUBLE PRECISION, a DOUBLE PRECISION)
+        RETURNS DOUBLE PRECISION AS $$
+        BEGIN
+            RETURN 2 / (1 + EXP((o - x) * 5.29330482472 / a)) - 1;
+        END;
+        $$ LANGUAGE plpgsql;
+        """
+    )
+
 @connect_database
 def set_score(cur: psycopg2.extensions.cursor, table_name: str, strategie: Dict[str, float]) -> None:
     """
@@ -214,7 +246,7 @@ def get_top_point(cur: psycopg2.extensions.cursor, table_name: str) -> Tuple[flo
     """
     Retourne le point ayant le score le plus élevé et le supprime de la table.
     """
-    best_point_index = random.randint(0, 4)
+    best_point_index = random.randint(0, 0)
     cur.execute(
         f"""
         WITH top_point AS (

@@ -20,6 +20,8 @@ from utils.db_utils import (
     update_score_from_points_repeltion,
     set_distance_to_point,
     get_top_point,
+    apply_sigmoid,
+    set_sigmoid
 )
 
 class Epervier:
@@ -40,6 +42,7 @@ class Epervier:
             raise RuntimeError(f"Erreur lors de l'obtention de l'angle de fuite: {e}")
         
         self.table_name: str = "zone_valide"
+        set_sigmoid()
 
     def get_graph_from_isochrones(self, time: float, delta_time: float = 10*60) -> Dict[str, Any]:
         """
@@ -62,7 +65,7 @@ class Epervier:
         except Exception as e:
             raise RuntimeError(f"Erreur lors du chargement du graphe depuis la base de données: {e}")
 
-    def __add_graph_infos(self) -> None:
+    def __add_graph_infos(self, strategie) -> None:
         """
         Ajoute et normalise les informations aux nœuds du graphe :
         - Nombre d'arêtes adjacentes -> statique
@@ -82,13 +85,17 @@ class Epervier:
         for attr in attrs:
             normalize_column(self.table_name, attr)
 
+        # appliquer la sigmoid à distance_to_start et difference_angle:
+        apply_sigmoid(self.table_name, 'distance_to_start', scale = 1)
+        apply_sigmoid(self.table_name, 'difference_angle', offset=0.5, scale=strategie['direction_alpha'])
+
     def select_points(self, strategie: Dict[str, float], n_points: int) -> List[Tuple[float, float]]:
         """
         Sélectionne et retourne une liste de points (lat, lon) en fonction de la stratégie et du nombre de points.
         """
         try:
             # Ajouter les informations au graphe
-            self.__add_graph_infos()
+            self.__add_graph_infos(strategie)
 
             points = []
             # Récupérer les n_points meilleurs points
@@ -100,6 +107,7 @@ class Epervier:
             for i in range(1, n_points):
                 set_distance_to_point(self.table_name, points[-1], f"distance_to_point_{i}")
                 normalize_column(self.table_name, f"distance_to_point_{i}")
+                apply_sigmoid(self.table_name, f'distance_to_point_{i}', scale=strategie['points_repeltion_alpha'])
                 update_score_from_points_repeltion(self.table_name, strategie, f"distance_to_point_{i}")
                 point = get_top_point(self.table_name)
                 points.append(point)
