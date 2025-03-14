@@ -1,4 +1,4 @@
-# core/epervier.py
+# core/Epeire.py
 import osmnx as ox
 from typing import Tuple, List, Dict, Any
 from shapely.geometry import Polygon, mapping
@@ -24,10 +24,10 @@ from utils.db_utils import (
     set_sigmoid
 )
 
-class Epervier:
+class Epeire:
     def __init__(self, starting_point: str, direction_fuite: float | str = None) -> None:
         """
-        Initialise la classe Epervier avec un point de départ et une direction de fuite.
+        Initialise la classe Epeire avec un point de départ et une direction de fuite.
         """
         # Obtention des coordonnées de commission de l'infraction
         try:
@@ -44,15 +44,17 @@ class Epervier:
         self.table_name: str = "zone_valide"
         set_sigmoid()
 
-    def get_graph_from_isochrones(self, time: float, delta_time: float = 10*60) -> Dict[str, Any]:
+    def get_graph_from_isochrones(self, time: float, delta_time: float = 30*60) -> Dict[str, Any]:
         """
         Charge le graphe depuis un fichier osm.pbf à partir de deux isochrones.
         Retourne ces deux isochrones et la zone valide.
         """
         try:
-            isochrone_A: Polygon = get_isochrone(self.starting_coords, time + delta_time)
-            isochrone_B: Polygon = get_isochrone(self.starting_coords, time)
+            isochrone_A: Polygon = get_isochrone(self.starting_coords, time + delta_time + 10*60) # fenetre de 10min
+            isochrone_B: Polygon = get_isochrone(self.starting_coords, time + delta_time)
+            isochrone_C: Polygon = get_isochrone(self.starting_coords, time)
             valid_zone = isochrone_A.difference(isochrone_B)
+            zpp = isochrone_B.difference(isochrone_C)
 
             # Création d'une table temporaire qui contient les noeuds dans la zone valide
             create_table_from_isochrone(self.table_name, valid_zone)
@@ -60,7 +62,9 @@ class Epervier:
             return {
                 'isoA': mapping(isochrone_A),
                 'isoB': mapping(isochrone_B),
+                'isoC' : mapping(isochrone_C),
                 'valid_zone': mapping(valid_zone),
+                'zpp': mapping(zpp)
             }
         except Exception as e:
             raise RuntimeError(f"Erreur lors du chargement du graphe depuis la base de données: {e}")
@@ -118,6 +122,6 @@ class Epervier:
 
 if __name__ == "__main__":
     try:
-        e = Epervier("auch", 30 * 60)
+        e = Epeire("auch", 30 * 60)
     except Exception as err:
         print(f"Erreur: {err}")

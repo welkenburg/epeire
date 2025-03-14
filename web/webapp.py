@@ -4,7 +4,7 @@ from geopy.geocoders import Nominatim
 from web.web_utils import load_data, load_menu, load_advanced_menu
 from utils.utils import measure_time, time_to_seconds
 from utils.db_utils import get_db_attributes
-from core.epervier import Epervier
+from core.epeire import Epeire
 from typing import Dict, Union
 
 app = Flask(__name__, template_folder="../templates", static_folder="../static")
@@ -73,10 +73,10 @@ def submit_form() -> Union[str, Dict]:
         if strat is None:
             return {'error': 'Stratégie invalide'}, 400
 
-        epervier = Epervier(adresse, direction_fuite)
-        result = epervier.get_graph_from_isochrones(time, dt)
+        epeire = Epeire(adresse, direction_fuite)
+        result = epeire.get_graph_from_isochrones(time, dt)
         
-        points = epervier.select_points(strat, num)
+        points = epeire.select_points(strat, num)
         
         return {**result, "points": points}
     except Exception as e:

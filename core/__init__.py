@@ -1,5 +1,5 @@
 # core/__init__.py
 
-from .epervier import Epervier
+from .epeire import Epeire
 
-__all__ = ["Epervier"]
+__all__ = ["Epeire"]

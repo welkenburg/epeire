@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>E-pervier</title>
+    <title>Epeire</title>
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
@@ -29,12 +30,12 @@
             </div>
     
             <div class="form-group">
-                <label for="temps_fuite" class="form-label">Temps de fuite (hh:mm)* :</label>
+                <label for="temps_fuite" class="form-label">Temps écoulé depuis la commission des faits (hh:mm)* :</label>
                 <input type="time" id="temps_fuite" class="form-input" name="temps_fuite" required>
             </div>
 
             <div class="form-group strat-menu advanced-menu">
-                <label for="date_fuite" class="form-label">Fenêtre d'étude* :</label>
+                <label for="date_fuite" class="form-label">Delai de positionnement* :</label>
                 <input type="time" id="dt" class="form-input" name="dt" required>
             </div>
     
@@ -42,7 +43,7 @@
                 <label for="direction_fuite" class="form-label">Direction de fuite* :</label>
                 <select name="direction_fuite" id="direction_fuite" class="form-input">
                     <option value="None" disabled selected>Sélectionnez une direction de fuite</option>
-                    <option value="None">pas de direction de fuite</option>
+                    <option value="None">Direction de fuite ignorée</option>
                     <option value="N">Nord</option>
                     <option value="NE">Nord-Est</option>
                     <option value="NO">Nord-Ouest</option>
@@ -84,13 +85,9 @@
                 <label for="dot_color" class="form-label">Couleur des points :</label>
                 <input type="color" id="dot_color" class="form-input" name="dot_color" value="#FF0000" required>
             </div>
-            <div class="form-group checkbox-group strat-menu advanced-menu">
-                <label for="isochrone" class="form-label checkbox-label">Afficher l'isochrone ? :</label>
-                <input type="checkbox" id="isochrone" class="form-input checkbox-input" name="isochrone" data-toggle="iso-color-group">
-            </div>
 
-            <div class="form-group" id="iso-color-group">
-                <label for="dot_color" class="form-label">Couleur de l'isochrone :</label>
+            <div class="form-group">
+                <label for="dot_color" class="form-label">Couleur de la zone de présence potentielle :</label>
                 <input type="color" id="iso_color" class="form-input" name="iso_color" value="#0000FF">
             </div>
             <p>* : champs obligatoires</p>
@@ -98,6 +95,7 @@
 
         <div id="lancer">
             <button id="rst-btn" class="menu-button ctrl-button">REINITIALISER</button>
+            <button id="save-btn" class="menu-button ctrl-button">ENREGISTRER</button>
             <button id="go-btn" class="menu-button ctrl-button">GO</button>
         </div>
     </div>

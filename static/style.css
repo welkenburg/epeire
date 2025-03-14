@@ -74,6 +74,7 @@ button {
     padding: 1rem;
     border-radius: 0 0 0.2rem 0.2rem;
     overflow-y: auto;
+    padding-bottom: 0rem;
 }
 
 #lancer {
@@ -106,6 +107,8 @@ button {
     margin-bottom: 15px;
     display: flex;
     justify-content: space-between;
+    height: auto;
+    align-items: flex-end;
 }
 
 /* Labels */
@@ -118,9 +121,10 @@ button {
 /* Zones de texte */
 .form-input {
     width: 60%;
-    font-size: 16px;
+    font-size: 1rem;
     justify-content: flex-start;
     display: flex;
+    height: 2rem;
 }
 
 /* Bouton "Choisir" */
@@ -186,31 +190,4 @@ button {
     padding: 10px;
     border-radius: 5px;
     z-index: 1000;
-}
-
-.checkbox-input {
-    width: auto; /* Pousse la checkbox vers la droite */
-}
-
-.slider-container {
-    display: flex;
-    align-items: center;
-    margin-bottom: 10px;
-}
-
-.slider-label {
-    width: 40%;
-    text-align: right;
-    padding-right: 20px;
-}
-
-.slider-input {
-    flex: 1;
-}
-
-.slider-value {
-    margin-left: 10px;
-    font-size: 14px;
-    color: #333;
-    width: 3rem;
 }
