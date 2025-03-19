@@ -246,7 +246,8 @@ def get_top_point(cur: psycopg2.extensions.cursor, table_name: str) -> Tuple[flo
     """
     Retourne le point ayant le score le plus élevé et le supprime de la table.
     """
-    best_point_index = random.randint(0, 0)
+    entropie = 5
+    best_point_index = random.randint(0, entropie - 1)
     cur.execute(
         f"""
         WITH top_point AS (
